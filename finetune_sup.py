@@ -122,7 +122,7 @@ def main(args):
         with torch.no_grad():
             outputs = []
             tars = []
-            for batch_idx, (labels, strs, targets, toks) in enumerate(test_data_loader):
+            for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                 print(
                     f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
                 )
@@ -133,9 +133,9 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                temp = out['temp'] * 10
+                logits = out['logits']
                 targets = torch.tensor(targets).cuda().long()
-                outputs.append(torch.topk(temp[:,0].reshape(-1, 33), 1))
+                outputs.append(torch.topk(logits[:,0].reshape(-1, 33), 1))
                 tars.append(targets.reshape(-1))
             import numpy as np
             outputs = torch.cat(outputs, 0)
