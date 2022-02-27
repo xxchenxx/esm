@@ -113,7 +113,7 @@ def main(args):
             logits = out['logits']
             print(logits.shape)
             labels = torch.tensor(labels).cuda().long()
-            loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1), labels.reshape(-1)))
+            loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, 33), labels.reshape(-1)))
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
