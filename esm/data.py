@@ -147,6 +147,64 @@ class CSVBatchedDataset(object):
         _flush_current_buf()
         return batches
 
+class PickleBatchedDataset(object):
+    def __init__(self, sequence_strs, sequence_targets):
+        self.sequence_strs = list(sequence_strs)
+        self.sequence_targets = list(sequence_targets)
+
+    @classmethod
+    def from_file(cls, split_file, train=False, fasta_root=None):
+        split_file = pickle.load(open(split_file, "rb"))
+        if train:
+            names = split_file['train_names']
+            labels = split_file['train_labels']
+        else:
+            names = split_file['test_names']
+            labels = split_file['test_labels']
+
+        seqs = []
+        for name in names:
+            
+            fasta_file_path = os.path.join(fasta_root, name + ".fasta")
+            with open(fasta_file_path, 'r') as f:
+                fasta = f.readlines()[1:]
+                fasta = ''.join(fasta).replace("\n", "")
+            seqs.append(fasta)
+            
+        labels = labels
+        return cls(seqs, labels)
+
+    def __len__(self):
+        return len(self.sequence_labels)
+
+    def __getitem__(self, idx):
+        return self.sequence_targets[idx], self.sequence_strs[idx]
+
+    def get_batch_indices(self, toks_per_batch, extra_toks_per_seq=0):
+        sizes = [(len(s), i) for i, s in enumerate(self.sequence_strs)]
+        sizes.sort()
+        batches = []
+        buf = []
+        max_len = 0
+
+        def _flush_current_buf():
+            nonlocal max_len, buf
+            if len(buf) == 0:
+                return
+            batches.append(buf)
+            buf = []
+            max_len = 0
+
+        for sz, i in sizes:
+            sz += extra_toks_per_seq
+            if max(sz, max_len) * (len(buf) + 1) > toks_per_batch:
+                _flush_current_buf()
+            max_len = max(max_len, sz)
+            buf.append(i)
+
+        _flush_current_buf()
+        return batches
+
 def creating_ten_folds(OriginDataset):
     sequence_labels, sequence_strs, sequence_targets = OriginDataset.sequence_labels, OriginDataset.sequence_strs, OriginDataset.sequence_targets
 
@@ -522,6 +580,7 @@ class BatchConverter(object):
                 tokens[i, len(seq_encoded) + int(self.alphabet.prepend_bos)] = self.alphabet.eos_idx
 
         return labels, strs, tokens
+
 
 import numpy as np
 import random
