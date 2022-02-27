@@ -112,7 +112,7 @@ def main(args):
 
             logits = out['logits']
             print(logits.shape)
-            labels = torch.tensor(labels).cuda().float()
+            labels = torch.tensor(labels).cuda().long()
             loss = (torch.nn.functional.mse_loss(logits[:, 0].view(-1), labels.view(-1)))
             loss.backward()
             optimizer.step()
@@ -134,7 +134,7 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 temp = out['temp'] * 10
-                targets = torch.tensor(targets).cuda().float()
+                targets = torch.tensor(targets).cuda().long()
                 outputs.append(temp[:,0].view(-1).cpu().numpy())
                 tars.append(targets.view(-1).cpu().numpy())
             print(outputs)
