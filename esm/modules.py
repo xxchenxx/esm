@@ -312,6 +312,7 @@ class RobertaLMHead(nn.Module):
         return x
 
 
+
 class ContactPredictionHead(nn.Module):
     """Performs symmetrization, apc, and computes a logistic regression on the output features"""
 

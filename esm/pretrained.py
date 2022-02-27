@@ -17,11 +17,11 @@ def _has_regression_weights(model_name):
     return not ("esm1v" in model_name)
 
 
-def load_model_and_alphabet(model_name):
+def load_model_and_alphabet(model_name, mlm=False):
     if model_name.endswith(".pt"):  # treat as filepath
         return load_model_and_alphabet_local(model_name)
     else:
-        return load_model_and_alphabet_hub(model_name)
+        return load_model_and_alphabet_hub(model_name, mlm)
 
 
 def load_hub_workaround(url):
@@ -45,14 +45,14 @@ def load_regression_hub(model_name):
     return regression_data
 
 
-def load_model_and_alphabet_hub(model_name):
+def load_model_and_alphabet_hub(model_name, mlm=False):
     url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
     model_data = load_hub_workaround(url)
     if _has_regression_weights(model_name):
         regression_data = load_regression_hub(model_name)
     else:
         regression_data = None
-    return load_model_and_alphabet_core(model_data, regression_data)
+    return load_model_and_alphabet_core(model_data, regression_data, mlm)
 
 
 def load_model_and_alphabet_local(model_location):
@@ -73,12 +73,13 @@ def has_emb_layer_norm_before(model_state):
     return any(k.startswith("emb_layer_norm_before") for k, param in model_state.items())
 
 
-def load_model_and_alphabet_core(model_data, regression_data=None):
+def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False):
     if regression_data is not None:
         model_data["model"].update(regression_data["model"])
-
-    alphabet = esm.Alphabet.from_architecture(model_data["args"].arch)
-
+    if not mlm:
+        alphabet = esm.Alphabet.from_architecture(model_data["args"].arch)
+    else:
+        alphabet = esm.MaskedAlphabet.from_architecture(model_data["args"].arch)
     if model_data["args"].arch == "roberta_large":
         # upgrade state dict
         pra = lambda s: "".join(s.split("encoder_")[1:] if "encoder" in s else s)
@@ -129,7 +130,7 @@ def load_model_and_alphabet_core(model_data, regression_data=None):
     found_keys = set(model_state.keys())
 
     if regression_data is None:
-        expected_missing = {"contact_head.regression.weight", "contact_head.regression.bias"}
+        expected_missing = {"contact_head.regression.weight", "contact_head.regression.bias", "temp_head.weight", "temp_head.bias"}
         error_msgs = []
         missing = (expected_keys - found_keys) - expected_missing
         if missing:
@@ -149,7 +150,7 @@ def load_model_and_alphabet_core(model_data, regression_data=None):
                 "Regression weights not found, predicting contacts will not produce correct results."
             )
 
-    model.load_state_dict(model_state, strict=regression_data is not None)
+    model.load_state_dict(model_state, strict=False)
 
     return model, alphabet
 

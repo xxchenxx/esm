@@ -106,6 +106,7 @@ class ProteinBertModel(nn.Module):
             output_dim=self.alphabet_size,
             weight=self.embed_tokens.weight,
         )
+        self.temp_head = nn.Linear(self.args.embed_dim, 1)
 
     def _init_submodules_esm1(self):
         self._init_submodules_common()
@@ -115,8 +116,9 @@ class ProteinBertModel(nn.Module):
         self.embed_out_bias = None
         if self.args.final_bias:
             self.embed_out_bias = nn.Parameter(torch.zeros(self.alphabet_size))
+        
 
-    def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False):
+    def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False, return_temp=False):
         if return_contacts:
             need_head_weights = True
 
@@ -155,6 +157,8 @@ class ProteinBertModel(nn.Module):
         if not padding_mask.any():
             padding_mask = None
 
+        
+
         for layer_idx, layer in enumerate(self.layers):
             x, attn = layer(
                 x, self_attn_padding_mask=padding_mask, need_head_weights=need_head_weights
@@ -172,12 +176,19 @@ class ProteinBertModel(nn.Module):
             # last hidden representation should have layer norm applied
             if (layer_idx + 1) in repr_layers:
                 hidden_representations[layer_idx + 1] = x
+
+            if return_temp:
+                temp = self.temp_head(x)
+            else:
+                temp = None
+
             x = self.lm_head(x)
         else:
             x = F.linear(x, self.embed_out, bias=self.embed_out_bias)
             x = x.transpose(0, 1)  # (T, B, E) => (B, T, E)
 
-        result = {"logits": x, "representations": hidden_representations}
+        
+        result = {"logits": x, "representations": hidden_representations, "temp": temp}
         if need_head_weights:
             # attentions: B x L x H x T x T
             attentions = torch.stack(attn_weights, 1)
@@ -327,6 +338,7 @@ class MSATransformer(nn.Module):
             output_dim=self.alphabet_size,
             weight=self.embed_tokens.weight,
         )
+
 
     def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False):
         if return_contacts:
