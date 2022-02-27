@@ -93,8 +93,8 @@ def main(args):
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
-    for epoch in range(1):
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
+    for epoch in range(10):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             print(
@@ -135,14 +135,12 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 temp = out['temp'] * 10
                 targets = torch.tensor(targets).cuda().long()
-                outputs.append(temp[:,0].reshape(-1).cpu().numpy())
-                tars.append(targets.reshape(-1).cpu().numpy())
-            print(outputs)
-            print(tars)
+                outputs.append(torch.topk(temp[:,0].reshape(-1, 33), 1))
+                tars.append(targets.reshape(-1))
             import numpy as np
-            outputs = np.concatenate(outputs, 0)
-            tars = np.concatenate(tars, 0)
-            print(np.corrcoef(outputs, tars))
+            outputs = torch.cat(outputs, 0)
+            tars = torch.cat(tars, 0)
+            print((outputs == tars).float().sum() / tars.nelement())
     torch.save(model.state_dict(), "supervised-finetuned.pt")
 
 
