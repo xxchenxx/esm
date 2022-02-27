@@ -171,7 +171,7 @@ class PickleBatchedDataset(object):
                 fasta = ''.join(fasta).replace("\n", "")
             seqs.append(fasta)
             
-        labels = labels
+        labels = list(map(int, labels))
         return cls(seqs, labels)
 
     def __len__(self):
