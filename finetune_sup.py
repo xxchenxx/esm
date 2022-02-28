@@ -110,7 +110,7 @@ def main(args):
 
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-            logits = out['logits']
+            logits = out['cls_logits']
             print(logits.shape)
             labels = torch.tensor(labels).cuda().long()
             loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, 33), labels.reshape(-1)))
@@ -133,7 +133,7 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = out['logits']
+                logits = out['cls_logits']
                 labels = torch.tensor(labels).cuda().long()
                 outputs.append(torch.topk(logits[:,0].reshape(-1, 33), 1)[0])
                 tars.append(labels.reshape(-1))
