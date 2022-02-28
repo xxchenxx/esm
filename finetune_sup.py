@@ -135,7 +135,7 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['logits']
                 labels = torch.tensor(labels).cuda().long()
-                outputs.append(torch.topk(logits[:,0].reshape(-1, 33), 1))
+                outputs.append(torch.topk(logits[:,0].reshape(-1, 33), 1)[0])
                 tars.append(labels.reshape(-1))
             import numpy as np
             outputs = torch.cat(outputs, 0)
