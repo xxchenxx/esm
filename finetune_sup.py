@@ -113,7 +113,7 @@ def main(args):
             logits = out['cls_logits']
             print(logits.shape)
             labels = torch.tensor(labels).cuda().long()
-            loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, 33), labels.reshape(-1)))
+            loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, 2), labels.reshape(-1)))
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -135,7 +135,7 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['cls_logits']
                 labels = torch.tensor(labels).cuda().long()
-                outputs.append(torch.topk(logits[:,0].reshape(-1, 33), 1)[0])
+                outputs.append(torch.topk(logits[:,0].reshape(-1, 2), 1)[0])
                 tars.append(labels.reshape(-1))
             import numpy as np
             outputs = torch.cat(outputs, 0)
