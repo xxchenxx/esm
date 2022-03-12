@@ -305,11 +305,8 @@ class DirBatchedDataset(object):
             max_len = 0
 
         for sz, i in sizes:
-            sz += extra_toks_per_seq
-            if max(sz, max_len) * (len(buf) + 1) > toks_per_batch:
-                _flush_current_buf()
-            max_len = max(max_len, sz)
             buf.append(i)
+            _flush_current_buf()
 
         _flush_current_buf()
         return batches
