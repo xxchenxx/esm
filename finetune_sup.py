@@ -65,6 +65,14 @@ def create_parser():
         "--num_classes",
         type=int,
         help="num_classes",
+        default=3, 
+    )
+
+    parser.add_argument(
+        "--lr",
+        type=float,
+        help="learning rates",
+        default=1e-6, 
     )
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
@@ -99,8 +107,8 @@ def main(args):
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-6)
-    for epoch in range(10):
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    for epoch in range(20):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             print(
@@ -142,7 +150,7 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['cls_logits']
                 labels = torch.tensor(labels).cuda().long()
-                outputs.append(torch.topk(logits[:,0].reshape(-1, 2), 1)[1].view(-1))
+                outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
             import numpy as np
             
