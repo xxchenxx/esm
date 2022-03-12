@@ -263,7 +263,7 @@ class FireprotDBBatchedDataset(object):
         return batches
 
 
-class DirBatchedDataset(object):
+class FireprotDirBatchedDataset(object):
     def __init__(self, sequence_labels, sequence_strs):
         self.sequence_labels = list(sequence_labels)
         self.sequence_strs = list(sequence_strs)
@@ -276,7 +276,7 @@ class DirBatchedDataset(object):
         file_names = []
         for fasta_file_path in names:
             with open(fasta_file_path, 'r') as f:
-                fasta = f.readlines()[1:]
+                fasta = f.readlines()
                 fasta = ''.join(fasta).replace("\n", "")
             file_names.append(fasta_file_path.split("/")[-1].split(".")[0])
             seqs.append(fasta)
