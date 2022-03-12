@@ -113,7 +113,7 @@ def main(args):
                         layer: t[i, 1 : len(strs[i]) + 1].clone()
                         for layer, t in representations.items()
                     }
-                    for layer, t in representations.items():
+                    for layer, t in result["representations"].items():
                         print(layer)
                         print(t.shape)
                 if "mean" in args.include:
