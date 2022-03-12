@@ -9,7 +9,7 @@ import pathlib
 
 import torch
 
-from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, FireprotDirBatchedDataset
+from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, DirBatchedDataset
 
 
 def create_parser():
@@ -66,7 +66,7 @@ def main(args):
         model = model.cuda()
         print("Transferred model to GPU")
 
-    dataset = FireprotDirBatchedDataset.from_file(args.fasta_file)
+    dataset = DirBatchedDataset.from_file(args.fasta_file)
     batches = dataset.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     data_loader = torch.utils.data.DataLoader(
         dataset, collate_fn=alphabet.get_batch_converter(), batch_sampler=batches
