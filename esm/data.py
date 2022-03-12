@@ -224,6 +224,7 @@ class FireprotDBBatchedDataset(object):
         for name in names:
             fasta_file_path = os.path.join(fasta_root, name + ".fasta")
             with open(fasta_file_path, 'r') as f:
+                fasta = f.readlines()
                 fasta = ''.join(fasta).replace("\n", "")
             seqs.append(fasta)
             
