@@ -61,12 +61,18 @@ def create_parser():
         help="fold",
     )
 
+    parser.add_argument(
+        "--num_classes",
+        type=int,
+        help="num_classes",
+    )
+
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
     return parser
 
 
 def main(args):
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()

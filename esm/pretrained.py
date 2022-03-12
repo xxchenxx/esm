@@ -17,11 +17,11 @@ def _has_regression_weights(model_name):
     return not ("esm1v" in model_name)
 
 
-def load_model_and_alphabet(model_name, mlm=False):
+def load_model_and_alphabet(model_name, mlm=False, num_classes=3):
     if model_name.endswith(".pt"):  # treat as filepath
-        return load_model_and_alphabet_local(model_name)
+        return load_model_and_alphabet_local(model_name, num_classes)
     else:
-        return load_model_and_alphabet_hub(model_name, mlm)
+        return load_model_and_alphabet_hub(model_name, mlm, num_classes)
 
 
 def load_hub_workaround(url):
@@ -45,14 +45,14 @@ def load_regression_hub(model_name):
     return regression_data
 
 
-def load_model_and_alphabet_hub(model_name, mlm=False):
+def load_model_and_alphabet_hub(model_name, mlm=False, num_classes=3):
     url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
     model_data = load_hub_workaround(url)
     if _has_regression_weights(model_name):
         regression_data = load_regression_hub(model_name)
     else:
         regression_data = None
-    return load_model_and_alphabet_core(model_data, regression_data, mlm)
+    return load_model_and_alphabet_core(model_data, regression_data, mlm, num_classes)
 
 
 def load_model_and_alphabet_local(model_location):
@@ -73,7 +73,7 @@ def has_emb_layer_norm_before(model_state):
     return any(k.startswith("emb_layer_norm_before") for k, param in model_state.items())
 
 
-def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False):
+def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, num_classes=3):
     if regression_data is not None:
         model_data["model"].update(regression_data["model"])
     if not mlm:

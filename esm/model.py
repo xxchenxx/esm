@@ -49,7 +49,7 @@ class ProteinBertModel(nn.Module):
             help="number of attention heads",
         )
 
-    def __init__(self, args, alphabet):
+    def __init__(self, args, alphabet, num_classes=3):
         super().__init__()
         self.args = args
         self.alphabet_size = len(alphabet)
@@ -60,6 +60,7 @@ class ProteinBertModel(nn.Module):
         self.prepend_bos = alphabet.prepend_bos
         self.append_eos = alphabet.append_eos
         self.emb_layer_norm_before = getattr(self.args, "emb_layer_norm_before", False)
+        self.num_classes = num_classes
         if self.args.arch == "roberta_large":
             self.model_version = "ESM-1b"
             self._init_submodules_esm1b()
@@ -107,7 +108,7 @@ class ProteinBertModel(nn.Module):
             weight=self.embed_tokens.weight,
         )
         self.temp_head = nn.Linear(self.args.embed_dim, 1)
-        self.classification_head = nn.Linear(self.args.embed_dim, 2)
+        self.classification_head = nn.Linear(self.args.embed_dim, self.num_classes)
 
     def _init_submodules_esm1(self):
         self._init_submodules_common()
