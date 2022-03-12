@@ -178,7 +178,7 @@ class PickleBatchedDataset(object):
         return len(self.sequence_strs)
 
     def __getitem__(self, idx):
-        return self.sequence_targets[idx], self.sequence_strs[idx]
+        return self.sequence_targets[idx], self.sequence_strs[idx], None
 
     def get_batch_indices(self, toks_per_batch, extra_toks_per_seq=0):
         sizes = [(len(s), i) for i, s in enumerate(self.sequence_strs)]
@@ -208,10 +208,9 @@ class PickleBatchedDataset(object):
 
 
 class DirBatchedDataset(object):
-    def __init__(self, sequence_labels, sequence_strs, sequence_targets):
+    def __init__(self, sequence_labels, sequence_strs):
         self.sequence_labels = list(sequence_labels)
         self.sequence_strs = list(sequence_strs)
-        self.sequence_targets = list(sequence_targets)
 
     @classmethod
     def from_file(cls, dir, train=False, fasta_root=None):
@@ -226,14 +225,13 @@ class DirBatchedDataset(object):
             file_names.append(fasta_file_path.split("/")[-1].split(".")[0])
             seqs.append(fasta)
             
-        labels = [0] * len(seqs)
-        return cls(file_names, seqs, labels)
+        return cls(file_names, seqs)
 
     def __len__(self):
         return len(self.sequence_labels)
 
     def __getitem__(self, idx):
-        return self.sequence_labels[idx], self.sequence_strs[idx], self.sequence_targets[idx]
+        return self.sequence_labels[idx], self.sequence_strs[idx]
 
     def get_batch_indices(self, toks_per_batch, extra_toks_per_seq=0):
         sizes = [(len(s), i) for i, s in enumerate(self.sequence_strs)]
@@ -600,8 +598,8 @@ class BatchConverter(object):
     def __call__(self, raw_batch: Sequence[Tuple[str, str]]):
         # RoBERTa uses an eos token, while ESM-1 does not.
         batch_size = len(raw_batch)
-        batch_labels, seq_str_list, batched_targets = zip(*raw_batch)
-        #batch_labels, seq_str_list = zip(*raw_batch)
+        #batch_labels, seq_str_list, batched_targets = zip(*raw_batch)
+        batch_labels, seq_str_list = zip(*raw_batch)
 
         seq_encoded_list = [self.alphabet.encode(seq_str) for seq_str in seq_str_list]
         max_len = max(len(seq_encoded) for seq_encoded in seq_encoded_list)
@@ -615,7 +613,7 @@ class BatchConverter(object):
         tokens.fill_(self.alphabet.padding_idx)
         labels = []
         strs = []
-        targets = []
+        #targets = []
 
         for i, (label, seq_str, seq_encoded) in enumerate(
             zip(batch_labels, seq_str_list, seq_encoded_list)

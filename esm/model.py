@@ -189,6 +189,8 @@ class ProteinBertModel(nn.Module):
         else:
             x = F.linear(x, self.embed_out, bias=self.embed_out_bias)
             x = x.transpose(0, 1)  # (T, B, E) => (B, T, E)
+            temp = None
+            cls_logits = None
 
         
         result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits}
