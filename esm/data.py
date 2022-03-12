@@ -178,7 +178,7 @@ class PickleBatchedDataset(object):
         return len(self.sequence_strs)
 
     def __getitem__(self, idx):
-        return self.sequence_targets[idx], self.sequence_strs[idx], None
+        return self.sequence_targets[idx], self.sequence_strs[idx]
 
     def get_batch_indices(self, toks_per_batch, extra_toks_per_seq=0):
         sizes = [(len(s), i) for i, s in enumerate(self.sequence_strs)]
