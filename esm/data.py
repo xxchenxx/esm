@@ -505,6 +505,8 @@ class Alphabet(object):
             return result
 
         def split_on_tokens(tok_list, text):
+            print(text)
+            print(len(text))
             if not text.strip():
                 return []
 
@@ -532,6 +534,7 @@ class Alphabet(object):
 
         no_split_token = self.unique_no_split_tokens
         tokenized_text = split_on_tokens(no_split_token, text)
+        print(len(tokenized_text))
         return tokenized_text
 
     def encode(self, text):
