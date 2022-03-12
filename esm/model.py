@@ -49,7 +49,7 @@ class ProteinBertModel(nn.Module):
             help="number of attention heads",
         )
 
-    def __init__(self, args, alphabet, num_classes=3):
+    def __init__(self, args, alphabet, num_classes=2):
         super().__init__()
         self.args = args
         self.alphabet_size = len(alphabet)
