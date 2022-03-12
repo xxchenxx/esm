@@ -9,7 +9,7 @@ import pathlib
 
 import torch
 
-from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset
+from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 
 
 def create_parser():
@@ -79,8 +79,8 @@ def main(args):
         print("Transferred model to GPU")
     import sys
 
-    train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
-    test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
+    train_set = FireprotDBBatchedDataset.from_file(args.split_file, True, args.fasta_file)
+    test_set = FireprotDBBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=train_batches
