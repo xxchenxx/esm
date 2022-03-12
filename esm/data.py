@@ -331,8 +331,11 @@ class FireprotDirBatchedDataset(object):
                 fasta = ''.join(fasta).replace("\n", "")
             file_names.append(fasta_file_path.split("/")[-1].split(".")[0])
             seqs.append(fasta)
-            
-        return cls(file_names, seqs)
+        index = []
+        for i in range(len(seqs)):
+            if len(seqs[i]) < 1022:
+                index.append(i)
+        return cls([file_names[i] for i in index], [seqs[i] for i in index])
 
     def __len__(self):
         return len(self.sequence_labels)
