@@ -113,7 +113,7 @@ def main(args):
             # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
             if args.truncate:
                 toks = toks[:, :1022]
-            print(labels.shape)
+            #print(labels.shape)
             print(strs.shape)
             print(toks.shape)
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
