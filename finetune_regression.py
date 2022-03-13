@@ -9,7 +9,7 @@ import pathlib
 import scipy
 import torch
 
-from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
+from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset, FireprotDBRegressionBatchedDataset
 
 
 def create_parser():
@@ -87,8 +87,8 @@ def main(args):
         print("Transferred model to GPU")
     import sys
 
-    train_set = FireprotDBBatchedDataset.from_file(args.split_file, True, args.fasta_file)
-    test_set = FireprotDBBatchedDataset.from_file(args.split_file, False, args.fasta_file)
+    train_set = FireprotDBRegressionBatchedDataset.from_file(args.split_file, True, args.fasta_file)
+    test_set = FireprotDBRegressionBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=train_batches
@@ -127,7 +127,7 @@ def main(args):
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
             logits = out['cls_logits']
-            labels = torch.tensor(labels).cuda().long()
+            labels = torch.tensor(labels).cuda().float()
             loss = (torch.nn.functional.mse(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
             loss.backward()
             optimizer.step()
@@ -149,7 +149,7 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['cls_logits']
-                labels = torch.tensor(labels).cuda().long()
+                labels = torch.tensor(labels).cuda().float()
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
             import numpy as np
