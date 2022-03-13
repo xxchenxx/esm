@@ -127,7 +127,7 @@ def main(args):
 
             logits = out['cls_logits']
             labels = torch.tensor(labels).cuda().float()
-            loss = (torch.nn.functional.mse(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
+            loss = (torch.nn.functional.mse_loss(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
