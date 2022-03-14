@@ -125,7 +125,7 @@ def main(args):
 
             out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-            logits = out['cls_logits']
+            logits = out['cls_logits'] * 100
             labels = torch.tensor(labels).cuda().float()
             loss = (torch.nn.functional.mse_loss(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
             loss.backward()
@@ -147,7 +147,7 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = out['cls_logits']
+                logits = out['cls_logits'] * 100
                 labels = torch.tensor(labels).cuda().float()
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))

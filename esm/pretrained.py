@@ -123,7 +123,7 @@ def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, nu
 
     model = model_type(
         Namespace(**model_args),
-        alphabet,
+        alphabet, num_classes
     )
 
     expected_keys = set(model.state_dict().keys())
