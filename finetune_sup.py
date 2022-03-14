@@ -82,6 +82,7 @@ def create_parser():
 
 
 def main(args):
+    best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
@@ -159,7 +160,9 @@ def main(args):
             outputs = torch.cat(outputs, 0)
             tars = torch.cat(tars, 0)
             print("EVALUATION:", (outputs == tars).float().sum() / tars.nelement())
-    torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
+            acc = (outputs == tars).float().sum() / tars.nelement()
+            if acc > best:
+                torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
 
 
 if __name__ == "__main__":
