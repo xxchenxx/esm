@@ -163,6 +163,7 @@ def main(args):
             acc = (outputs == tars).float().sum() / tars.nelement()
             if acc > best:
                 torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
+                best = acc
 
 
 if __name__ == "__main__":
