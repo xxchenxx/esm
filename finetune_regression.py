@@ -8,7 +8,7 @@ import argparse
 import pathlib
 import scipy
 import torch
-
+import scipy.stats
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, AlphaFoldRegressionBatchedDataset
 
 def create_parser():
@@ -127,7 +127,7 @@ def main(args):
 
             logits = out['cls_logits'] * 100
             labels = torch.tensor(labels).cuda().float()
-            loss = (torch.nn.functional.mse_loss(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
+            loss = (torch.nn.functional.mse_loss(logits[:, 0].reshape(-1), labels.reshape(-1)))
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -149,12 +149,12 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['cls_logits'] * 100
                 labels = torch.tensor(labels).cuda().float()
-                outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
+                outputs.append(logits[:, 0].reshape(-1))
                 tars.append(labels.reshape(-1))
             import numpy as np
             
-            outputs = torch.cat(outputs, 0)
-            tars = torch.cat(tars, 0)
+            outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+            tars = torch.cat(tars, 0).detach().cpu().numpy()
             print("EVALUATION:", scipy.stats.spearmanr(outputs, tars))
     torch.save(model.state_dict(), "supervised-finetuned.pt")
 
