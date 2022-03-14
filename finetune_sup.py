@@ -76,6 +76,8 @@ def create_parser():
     )
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
+    parser.add_argument("--idx", type=int, default=0)
+
     return parser
 
 
@@ -87,8 +89,8 @@ def main(args):
         print("Transferred model to GPU")
     import sys
 
-    train_set = FireprotDBBatchedDataset.from_file(args.split_file, True, args.fasta_file)
-    test_set = FireprotDBBatchedDataset.from_file(args.split_file, False, args.fasta_file)
+    train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
+    test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=train_batches
@@ -157,7 +159,7 @@ def main(args):
             outputs = torch.cat(outputs, 0)
             tars = torch.cat(tars, 0)
             print("EVALUATION:", (outputs == tars).float().sum() / tars.nelement())
-    torch.save(model.state_dict(), "supervised-finetuned.pt")
+    torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
 
 
 if __name__ == "__main__":
