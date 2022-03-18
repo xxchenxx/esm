@@ -8,8 +8,10 @@ import argparse
 import pathlib
 
 import torch
-
+import torch.nn.utils.prune as prune
+import torch.nn as nn
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
+from esm.modules import TransformerLayer
 
 
 def create_parser():
@@ -77,9 +79,32 @@ def create_parser():
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
     parser.add_argument("--idx", type=int, default=0)
+    parser.add_argument("--pruning_ratio", type=float, default=0)
 
     return parser
 
+def pruning_model(model, px):
+    
+
+    print('start unstructured pruning for all conv layers')
+    parameters_to_prune =[]
+    for name, m in model.named_modules():
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            print(f"Pruning {name}")
+            parameters_to_prune.append((m,'weight'))
+        elif isinstance(m, TransformerLayer):
+            print(f"Pruning {name}.fc1")
+            parameters_to_prune.append((m.fc1,'weight'))
+            print(f"Pruning {name}.fc2")
+            parameters_to_prune.append((m.fc2,'weight'))
+
+    parameters_to_prune = tuple(parameters_to_prune)
+
+    prune.global_unstructured(
+        parameters_to_prune,
+        pruning_method=prune.L1Unstructured,
+        amount=px,
+    )
 
 def main(args):
     best = 0
@@ -110,32 +135,31 @@ def main(args):
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
 
+    if args.pruning_ratio > 0:
+        pruning_model(model, args.pruning_ratio)
+    model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     for epoch in range(20):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
-            print(
-                f"Processing {batch_idx + 1} of {len(train_batches)} batches ({toks.size(0)} sequences)"
-            )
-            if torch.cuda.is_available() and not args.nogpu:
-                toks = toks.to(device="cuda", non_blocking=True)
-            #print(toks)
-            # The model is trained on truncated sequences and passing longer ones in at
-            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-            if args.truncate:
-                toks = toks[:, :1022]
-            
-            #print(strs.shape)
+            with torch.autograd.set_detect_anomaly(True):
+                print(
+                    f"Processing {batch_idx + 1} of {len(train_batches)} batches ({toks.size(0)} sequences)"
+                )
+                toks = toks.cuda()
+                if args.truncate:
+                    toks = toks[:, :1022]
+                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                logits = out['cls_logits']
+                labels = torch.tensor(labels).cuda().long()
+                loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
+                        
+                loss.backward()
+                optimizer.step()
+                model.zero_grad()
+                print(loss.item())
 
-            logits = out['cls_logits']
-            labels = torch.tensor(labels).cuda().long()
-            loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            print(loss.item())
         model.eval()
         with torch.no_grad():
             outputs = []
@@ -159,12 +183,12 @@ def main(args):
             
             outputs = torch.cat(outputs, 0)
             tars = torch.cat(tars, 0)
-            print("EVALUATION:", (outputs == tars).float().sum() / tars.nelement())
+            print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
             acc = (outputs == tars).float().sum() / tars.nelement()
             if acc > best:
                 torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
                 best = acc
-
+    print(best)
 
 if __name__ == "__main__":
     parser = create_parser()
