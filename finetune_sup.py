@@ -78,9 +78,9 @@ def create_parser():
     )
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
-    parser.add_argument("--idx", type=int, default=0)
+    parser.add_argument("--idx", type=str, default='0')
     parser.add_argument("--pruning_ratio", type=float, default=0)
-
+    parser.add_argument('--checkpoint', type=str, default=None)
     return parser
 
 def pruning_model(model, px):
@@ -134,9 +134,13 @@ def main(args):
 
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
+    
+    if args.checkpoint is not None:
+        model.load_state_dict(torch.load(args.checkpoint))
 
     if args.pruning_ratio > 0:
         pruning_model(model, args.pruning_ratio)
+        
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     for epoch in range(20):

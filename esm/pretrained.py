@@ -55,7 +55,7 @@ def load_model_and_alphabet_hub(model_name, mlm=False, num_classes=3):
     return load_model_and_alphabet_core(model_data, regression_data, mlm, num_classes)
 
 
-def load_model_and_alphabet_local(model_location):
+def load_model_and_alphabet_local(model_location, num_classes):
     """ Load from local path. The regression weights need to be co-located """
     model_location = Path(model_location)
     model_data = torch.load(str(model_location), map_location="cpu")
@@ -65,7 +65,7 @@ def load_model_and_alphabet_local(model_location):
         regression_data = torch.load(regression_location, map_location="cpu")
     else:
         regression_data = None
-    return load_model_and_alphabet_core(model_data, regression_data)
+    return load_model_and_alphabet_core(model_data, regression_data, num_classes)
 
 
 def has_emb_layer_norm_before(model_state):
