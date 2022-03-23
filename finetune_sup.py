@@ -6,7 +6,8 @@
 
 import argparse
 import pathlib
-
+import random
+import numpy as np
 import torch
 import torch.nn.utils.prune as prune
 import torch.nn as nn
@@ -93,11 +94,11 @@ def pruning_model(model, px):
         if 'self_attn' in name and (not 'k' in name) and isinstance(m, nn.Linear):
             print(f"Pruning {name}")
             parameters_to_prune.append((m,'weight'))
-        #elif isinstance(m, TransformerLayer):
-        #    print(f"Pruning {name}.fc2")
-        #    parameters_to_prune.append((m.fc2,'weight'))
-        #    print(f"Pruning {name}.fc2")
-        #    parameters_to_prune.append((m.fc2,'weight'))
+        elif isinstance(m, TransformerLayer):
+            print(f"Pruning {name}.fc2")
+            parameters_to_prune.append((m.fc2,'weight'))
+            print(f"Pruning {name}.fc2")
+            parameters_to_prune.append((m.fc2,'weight'))
 
     parameters_to_prune = tuple(parameters_to_prune)
 
