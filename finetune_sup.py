@@ -67,7 +67,7 @@ def create_parser():
         "--num_classes",
         type=int,
         help="num_classes",
-        default=3, 
+        default=2, 
     )
 
     parser.add_argument(
@@ -81,6 +81,7 @@ def create_parser():
     parser.add_argument("--idx", type=str, default='0')
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
+    parser.add_argument("--seed", type=int, default=1)
     return parser
 
 def pruning_model(model, px):
@@ -89,14 +90,14 @@ def pruning_model(model, px):
     print('start unstructured pruning for all conv layers')
     parameters_to_prune =[]
     for name, m in model.named_modules():
-        if 'self_attn' in name and isinstance(m, nn.Linear):
+        if 'self_attn' in name and (not 'k' in name) and isinstance(m, nn.Linear):
             print(f"Pruning {name}")
             parameters_to_prune.append((m,'weight'))
-        elif isinstance(m, TransformerLayer):
-            print(f"Pruning {name}.fc1")
-            parameters_to_prune.append((m.fc1,'weight'))
-            print(f"Pruning {name}.fc2")
-            parameters_to_prune.append((m.fc2,'weight'))
+        #elif isinstance(m, TransformerLayer):
+        #    print(f"Pruning {name}.fc2")
+        #    parameters_to_prune.append((m.fc2,'weight'))
+        #    print(f"Pruning {name}.fc2")
+        #    parameters_to_prune.append((m.fc2,'weight'))
 
     parameters_to_prune = tuple(parameters_to_prune)
 
@@ -106,7 +107,16 @@ def pruning_model(model, px):
         amount=px,
     )
 
+def set_seed(args):
+    torch.backends.cudnn.benchmark=False
+    torch.backends.cudnn.deterministic=True
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+
 def main(args):
+
+    set_seed(args)
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
     model.eval()
@@ -140,7 +150,7 @@ def main(args):
 
     if args.pruning_ratio > 0:
         pruning_model(model, args.pruning_ratio)
-        
+
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     for epoch in range(20):
