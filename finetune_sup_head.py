@@ -145,18 +145,18 @@ def main(args):
 
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
-    
     if args.checkpoint is not None:
         model.load_state_dict(torch.load(args.checkpoint))
 
     if args.pruning_ratio > 0:
         pruning_model(model, args.pruning_ratio)
 
-    model = model.cuda()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    model = model.cuda().eval()
+    linear = nn.Linear(1280, args.num_classes).cuda()
+    optimizer = torch.optim.SGD(linear.parameters(), lr=args.lr)
     
     for epoch in range(20):
-        model.train()
+        model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
                 print(
@@ -167,7 +167,7 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                logits = out['cls_logits']
+                logits = linear(out['representations'][33])
                 labels = torch.tensor(labels).cuda().long()
                 loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
                         
@@ -191,7 +191,7 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = out['cls_logits']
+                logits = linear(out['representations'][33])
                 labels = torch.tensor(labels).cuda().long()
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
@@ -202,7 +202,7 @@ def main(args):
             print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
             acc = (outputs == tars).float().sum() / tars.nelement()
             if acc > best:
-                torch.save(model.state_dict(), f"supervised-finetuned-{args.idx}.pt")
+                torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
                 best = acc
     print(best)
 
