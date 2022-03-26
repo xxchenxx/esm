@@ -153,7 +153,7 @@ def main(args):
 
     model = model.cuda().eval()
     linear = nn.Linear(1280, args.num_classes).cuda()
-    optimizer = torch.optim.SGD(linear.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     
     for epoch in range(20):
         model.eval()

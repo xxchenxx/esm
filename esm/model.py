@@ -178,10 +178,10 @@ class ProteinBertModel(nn.Module):
             # last hidden representation should have layer norm applied
             if (layer_idx + 1) in repr_layers:
                 hidden_representations[layer_idx + 1] = x
-
+            hidden = x
             if return_temp:
-                temp = self.temp_head(x)
-                cls_logits = self.classification_head(x)
+                temp = self.temp_head(hidden)
+                cls_logits = self.classification_head(hidden)
             else:
                 temp = None
                 cls_logits = None
@@ -194,7 +194,7 @@ class ProteinBertModel(nn.Module):
             cls_logits = None
 
         
-        result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits}
+        result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits, "hidden": hidden}
         if need_head_weights:
             # attentions: B x L x H x T x T
             attentions = torch.stack(attn_weights, 1)
@@ -406,9 +406,10 @@ class MSATransformer(nn.Module):
         # last hidden representation should have layer norm applied
         if (layer_idx + 1) in repr_layers:
             hidden_representations[layer_idx + 1] = x
-        x = self.lm_head(x)
+        hidden = x
+        x = self.lm_head(hidden)
 
-        result = {"logits": x, "representations": hidden_representations}
+        result = {"logits": x, "representations": hidden_representations, "hidden": hidden}
         if need_head_weights:
             # col_attentions: B x L x H x C x R x R
             col_attentions = torch.stack(col_attn_weights, 1)
