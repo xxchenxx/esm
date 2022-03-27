@@ -156,8 +156,8 @@ def main(args):
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-
-    for epoch in range(20):
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [10, 20], 0.1)
+    for epoch in range(30):
         model.train()
         hiddens = []
         labels_all = []
@@ -204,6 +204,7 @@ def main(args):
                     print(loss.item())
                     hiddens = []
                     labels_all = []
+        scheduler.step()
         model.eval()
         with torch.no_grad():
             outputs = []
