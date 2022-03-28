@@ -209,7 +209,7 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-
+                logits = linear(out['representations'][33])
                 
                 print(loss.item())
 
