@@ -11,6 +11,8 @@ import numpy as np
 import torch
 import torch.nn.utils.prune as prune
 import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
 
@@ -83,6 +85,7 @@ def create_parser():
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--mix", action="store_true")
     return parser
 
 def pruning_model(model, px):
@@ -191,8 +194,31 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = linear(out['representations'][33])
+
+                hidden = out['representations'][33]
                 labels = torch.tensor(labels).cuda().long()
+                if args.mix:
+                    labels_one_hot = torch.zeros((labels.shape[0], 2)).cuda()
+                    for i in range(labels.shape[0]):
+                        labels_one_hot[i, labels[i]] = 1
+                    lam = np.random.beta(0.2, 0.2)
+                    rand_index = torch.randperm(hidden.size()[0]).cuda()
+                    labels_all_a = labels_one_hot
+                    labels_all_b = labels_one_hot[rand_index]
+                    hiddens_a = hidden
+                    hiddens_b = hidden[rand_index]
+
+                    labels_all = lam * labels_all_a + (1 - lam) * labels_all_b
+                    hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
+                    hiddens = linear(hiddens)
+                    loss = -(F.log_softmax(hiddens, 1) * labels_all).sum(1).mean(0)
+                else:
+                    loss = F.cross_entropy(hidden.view(hidden.shape[0], 2), labels)
+                loss.backward()
+                optimizer.step()
+                linear.zero_grad()
+                print(loss.item())
+
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
             import numpy as np
