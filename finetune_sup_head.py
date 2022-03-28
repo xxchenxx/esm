@@ -170,32 +170,7 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                logits = linear(out['representations'][33])
-                labels = torch.tensor(labels).cuda().long()
-                loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
-                        
-                loss.backward()
-                optimizer.step()
-                model.zero_grad()
-                print(loss.item())
-
-        model.eval()
-        with torch.no_grad():
-            outputs = []
-            tars = []
-            for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                )
-                if torch.cuda.is_available() and not args.nogpu:
-                    toks = toks.to(device="cuda", non_blocking=True)
-                # The model is trained on truncated sequences and passing longer ones in at
-                # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                if args.truncate:
-                    toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-
-                hidden = out['representations'][33]
+                hidden = out['representations'][33][:,0]
                 labels = torch.tensor(labels).cuda().long()
                 if args.mix:
                     labels_one_hot = torch.zeros((labels.shape[0], 2)).cuda()
@@ -217,6 +192,25 @@ def main(args):
                 loss.backward()
                 optimizer.step()
                 linear.zero_grad()
+                print(loss.item())
+
+        model.eval()
+        with torch.no_grad():
+            outputs = []
+            tars = []
+            for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                print(
+                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                )
+                if torch.cuda.is_available() and not args.nogpu:
+                    toks = toks.to(device="cuda", non_blocking=True)
+                # The model is trained on truncated sequences and passing longer ones in at
+                # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+                if args.truncate:
+                    toks = toks[:, :1022]
+                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+
+                
                 print(loss.item())
 
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
