@@ -221,7 +221,6 @@ def main(args):
 
                 outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
-            import numpy as np
             
             outputs = torch.cat(outputs, 0)
             tars = torch.cat(tars, 0)
