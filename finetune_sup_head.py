@@ -210,6 +210,7 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = linear(out['representations'][33])
+                labels = torch.tensor(labels).cuda().long()
                 
                 print(loss.item())
 
