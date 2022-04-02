@@ -128,16 +128,16 @@ def main(args):
 
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
-    train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
+    #train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=train_batches
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True#batch_sampler=train_batches
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
-    test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
+    #test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -154,35 +154,36 @@ def main(args):
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     for epoch in range(20):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
                 print(
-                    f"Processing {batch_idx + 1} of {len(train_batches)} batches ({toks.size(0)} sequences)"
+                    f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
                 )
                 toks = toks.cuda()
+                
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
                 logits = out['cls_logits']
                 labels = torch.tensor(labels).cuda().long()
-                loss = (torch.nn.functional.cross_entropy(logits[:, 0].reshape(-1, args.num_classes), labels.reshape(-1)))
+                loss = (torch.nn.functional.cross_entropy(logits.reshape(-1, args.num_classes), labels.reshape(-1)))
                         
                 loss.backward()
                 optimizer.step()
                 model.zero_grad()
                 print(loss.item())
-
+        lr_scheduler.step()
         model.eval()
         with torch.no_grad():
             outputs = []
             tars = []
             for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                 print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                    f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
                 )
                 if torch.cuda.is_available() and not args.nogpu:
                     toks = toks.to(device="cuda", non_blocking=True)
@@ -193,7 +194,7 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 logits = out['cls_logits']
                 labels = torch.tensor(labels).cuda().long()
-                outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
+                outputs.append(torch.argmax(logits.reshape(-1, args.num_classes), 1).view(-1))
                 tars.append(labels.reshape(-1))
             import numpy as np
             
