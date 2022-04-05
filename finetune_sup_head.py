@@ -7,6 +7,7 @@
 import argparse
 import pathlib
 import random
+from sched import scheduler
 import numpy as np
 import torch
 import torch.nn.utils.prune as prune
@@ -133,14 +134,14 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=train_batches
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=1, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -155,45 +156,43 @@ def main(args):
         pruning_model(model, args.pruning_ratio)
 
     model = model.cuda().eval()
-    linear = nn.Linear(1280, args.num_classes).cuda()
-    optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
-    
-    for epoch in range(20):
+    linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 2)).cuda()
+    optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
+    for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
                 print(
-                    f"Processing {batch_idx + 1} of {len(train_batches)} batches ({toks.size(0)} sequences)"
+                    f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
                 )
                 toks = toks.cuda()
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                hidden = out['representations'][33][:,0]
+                hidden = out['hidden']
+
                 labels = torch.tensor(labels).cuda().long()
                 if args.mix:
-                    labels_one_hot = torch.zeros((labels.shape[0], 2)).cuda()
-                    for i in range(labels.shape[0]):
-                        labels_one_hot[i, labels[i]] = 1
                     lam = np.random.beta(0.2, 0.2)
                     rand_index = torch.randperm(hidden.size()[0]).cuda()
-                    labels_all_a = labels_one_hot
-                    labels_all_b = labels_one_hot[rand_index]
+                    labels_all_a = labels
+                    labels_all_b = labels[rand_index]
                     hiddens_a = hidden
                     hiddens_b = hidden[rand_index]
-
-                    labels_all = lam * labels_all_a + (1 - lam) * labels_all_b
                     hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
                     hiddens = linear(hiddens)
-                    loss = -(F.log_softmax(hiddens, 1) * labels_all).sum(1).mean(0)
+                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels_all_a) * lam + \
+                        F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels_all_b) * (1 - lam)
                 else:
-                    loss = F.cross_entropy(hidden.view(hidden.shape[0], 2), labels)
+                    hiddens = linear(hidden)
+                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels)
                 loss.backward()
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-
+        lr_scheduler.step()
         model.eval()
         with torch.no_grad():
             outputs = []
@@ -209,12 +208,13 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = linear(out['representations'][33])
+                hidden = out['hidden']
+                logits = linear(hidden)
                 labels = torch.tensor(labels).cuda().long()
                 
                 print(loss.item())
 
-                outputs.append(torch.topk(logits[:,0].reshape(-1, args.num_classes), 1)[1].view(-1))
+                outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
                 tars.append(labels.reshape(-1))
             
             outputs = torch.cat(outputs, 0)

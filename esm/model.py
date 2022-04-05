@@ -199,7 +199,7 @@ class ProteinBertModel(nn.Module):
         else:
             temp = None
             cls_logits = None
-
+            hidden = None
     
         result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits, "hidden": hidden}
         if need_head_weights:
