@@ -193,7 +193,7 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-            if batch_idx % 10000 == 0:
+            if (1 + batch_idx) % 1000 == 0:
                 with torch.no_grad():
                     outputs = []
                     tars = []
@@ -214,7 +214,7 @@ def main(args):
                         
                         print(loss.item())
 
-                        outputs.append(torch.topk(logits.reshape(-1, 1), 1)[1].view(-1) * 10)
+                        outputs.append(logits.reshape(-1, 1).view(-1) * 10)
                         tars.append(labels.reshape(-1))
                     
                     outputs = torch.cat(outputs, 0).detach().cpu().numpy()
