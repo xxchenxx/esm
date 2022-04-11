@@ -142,7 +142,7 @@ def main(args):
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=1, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=10, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -193,6 +193,38 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
+            if batch_idx % 10000 == 0:
+                with torch.no_grad():
+                    outputs = []
+                    tars = []
+                    for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                        print(
+                            f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                        )
+                        if torch.cuda.is_available() and not args.nogpu:
+                            toks = toks.to(device="cuda", non_blocking=True)
+                        # The model is trained on truncated sequences and passing longer ones in at
+                        # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+                        if args.truncate:
+                            toks = toks[:, :1022]
+                        out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                        hidden = out['hidden']
+                        logits = linear(hidden)
+                        labels = torch.tensor(labels).cuda().float()
+                        
+                        print(loss.item())
+
+                        outputs.append(torch.topk(logits.reshape(-1, 1), 1)[1].view(-1) * 10)
+                        tars.append(labels.reshape(-1))
+                    
+                    outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+                    tars = torch.cat(tars, 0).detach().cpu().numpy()
+                    spearman = spearmanr(outputs, tars)[0]
+                    print("EVALUATION:", spearman)
+                    #acc = (outputs == tars).float().sum() / tars.nelement()
+                    if spearman > best:
+                        torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                        best = spearman
         lr_scheduler.step()
         model.eval()
         with torch.no_grad():
@@ -211,15 +243,15 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 hidden = out['hidden']
                 logits = linear(hidden)
-                labels = torch.tensor(labels).cuda().floa()
+                labels = torch.tensor(labels).cuda().float()
                 
                 print(loss.item())
 
                 outputs.append(torch.topk(logits.reshape(-1, 1), 1)[1].view(-1) * 10)
                 tars.append(labels.reshape(-1))
             
-            outputs = torch.cat(outputs, 0)
-            tars = torch.cat(tars, 0)
+            outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+            tars = torch.cat(tars, 0).detach().cpu().numpy()
             spearman = spearmanr(outputs, tars)[0]
             print("EVALUATION:", spearman)
             #acc = (outputs == tars).float().sum() / tars.nelement()
