@@ -252,24 +252,24 @@ class MultiheadAttention(nn.Module):
             saved_state = None
 
         if self.self_attention:
-            q = self.q_proj(query) + 4 * self.q_proj_adapter(query)
+            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query)) 
             k = self.k_proj(query)
-            v = self.v_proj(query) + 4 * self.v_proj_adapter(query)
+            v = self.v_proj(query) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
         elif self.encoder_decoder_attention:
             # encoder-decoder attention
-            q = self.q_proj(query) + 4 * self.q_proj_adapter(query)
+            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query))
             if key is None:
                 assert value is None
                 k = v = None
             else:
                 k = self.k_proj(key)
-                v = self.v_proj(key) + 4 * self.v_proj_adapter(query)
+                v = self.v_proj(key) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
 
         else:
             assert key is not None and value is not None
-            q = self.q_proj(query) + 4 * self.q_proj_adapter(query)
+            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query))
             k = self.k_proj(key)
-            v = self.v_proj(value) + 4 * self.v_proj_adapter(query)
+            v = self.v_proj(value) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
         q *= self.scaling
 
         if self.bias_k is not None:
