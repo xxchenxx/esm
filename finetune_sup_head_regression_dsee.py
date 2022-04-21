@@ -17,7 +17,7 @@ import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer, MultiheadAttention
 from tqdm import tqdm
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -135,14 +135,14 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=10, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=10, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,14 +158,17 @@ def main(args):
 
     model = model.cuda().eval()
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
-    optimizer1 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
+    optimizer1 = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
     for name, p in model.named_parameters():
         print(name)
-        if 'adapter' in name:
+        if 'adapter' in name or 'sparse' in name:
             p.requires_grad = True
         else:
             p.requires_grad = False
+    
+    for name, p in model.named_parameters():
+        print(name, p.requires_grad)
     for name, m in model.named_modules():
         if isinstance(m, MultiheadAttention):
             Q_weight = m.q_proj.weight
@@ -217,8 +220,8 @@ def main(args):
             S_V = (S_V.abs() >= v).float()
             prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
             prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))
-    lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
-    lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / 100, steps_per_epoch=1, epochs=int(4))
+    lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
+    lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / 1000, steps_per_epoch=1, epochs=int(20))
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
@@ -280,7 +283,9 @@ def main(args):
                     outputs = torch.cat(outputs, 0).detach().cpu().numpy()
                     tars = torch.cat(tars, 0).detach().cpu().numpy()
                     spearman = spearmanr(outputs, tars)[0]
-                    print("EVALUATION:", spearman)
+                    print("SPEAR EVALUATION:", spearman)
+                    pearson = pearsonr(outputs, tars)[0]
+                    print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
                     if spearman > best:
                         torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
@@ -308,13 +313,15 @@ def main(args):
                 
                 print(loss.item())
 
-                outputs.append(torch.topk(logits.reshape(-1, 1), 1)[1].view(-1) * 10)
+                outputs.append(logits.reshape(-1, 1).view(-1) * 10)
                 tars.append(labels.reshape(-1))
             
             outputs = torch.cat(outputs, 0).detach().cpu().numpy()
             tars = torch.cat(tars, 0).detach().cpu().numpy()
-            spearman = spearmanr(outputs, tars)[0]
+            spearman = pearsonr(outputs, tars)[0]
             print("EVALUATION:", spearman)
+            pearson = pearsonr(outputs, tars)[0]
+            print("PEAR EVALUATION:", pearson)
             #acc = (outputs == tars).float().sum() / tars.nelement()
             if spearman > best:
                 torch.save(linear.state_dict(), f"regression-{args.idx}.pt")

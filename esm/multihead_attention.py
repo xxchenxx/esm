@@ -110,13 +110,14 @@ class MultiheadAttention(nn.Module):
             nn.Linear(4, embed_dim, bias=False)
         )
         self.v_proj_sparse = nn.Linear(self.vdim, embed_dim, bias=False)
+        self.q_proj_sparse = nn.Linear(embed_dim, embed_dim, bias=False)
         self.v_proj = nn.Linear(self.vdim, embed_dim, bias=bias)
         self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.q_proj_adapter = nn.Sequential(
             nn.Linear(embed_dim, 4, bias=False),
             nn.Linear(4, embed_dim, bias=False)
         )
-        self.q_proj_sparse = nn.Linear(embed_dim, embed_dim, bias=False)
+        
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
 
         if add_bias_kv:
