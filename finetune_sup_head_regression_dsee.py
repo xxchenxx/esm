@@ -288,7 +288,7 @@ def main(args):
                     print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
                     if spearman > best:
-                        torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                        torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
                         best = spearman
         lr_scheduler1.step()
         lr_scheduler2.step()
@@ -318,13 +318,13 @@ def main(args):
             
             outputs = torch.cat(outputs, 0).detach().cpu().numpy()
             tars = torch.cat(tars, 0).detach().cpu().numpy()
-            spearman = pearsonr(outputs, tars)[0]
+            spearman = spearmanr(outputs, tars)[0]
             print("EVALUATION:", spearman)
             pearson = pearsonr(outputs, tars)[0]
             print("PEAR EVALUATION:", pearson)
             #acc = (outputs == tars).float().sum() / tars.nelement()
             if spearman > best:
-                torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
                 best = spearman
     print(best)
 
