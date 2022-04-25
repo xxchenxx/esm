@@ -17,7 +17,7 @@ import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
 
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -135,14 +135,14 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=10, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=10, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -214,13 +214,15 @@ def main(args):
                         
                         print(loss.item())
 
-                        outputs.append(logits.reshape(-1, 1).view(-1) * 10)
+                        outputs.append(logits.view(-1) * 10)
                         tars.append(labels.reshape(-1))
                     
                     outputs = torch.cat(outputs, 0).detach().cpu().numpy()
                     tars = torch.cat(tars, 0).detach().cpu().numpy()
                     spearman = spearmanr(outputs, tars)[0]
                     print("EVALUATION:", spearman)
+                    pearson = pearsonr(outputs, tars)[0]
+                    print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
                     if spearman > best:
                         torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
@@ -247,7 +249,7 @@ def main(args):
                 
                 print(loss.item())
 
-                outputs.append(torch.topk(logits.reshape(-1, 1), 1)[1].view(-1) * 10)
+                outputs.append(logits.view(-1) * 10)
                 tars.append(labels.reshape(-1))
             
             outputs = torch.cat(outputs, 0).detach().cpu().numpy()
@@ -255,6 +257,8 @@ def main(args):
             spearman = spearmanr(outputs, tars)[0]
             print("EVALUATION:", spearman)
             #acc = (outputs == tars).float().sum() / tars.nelement()
+            pearson = pearsonr(outputs, tars)[0]
+            print("PEAR EVALUATION:", pearson)
             if spearman > best:
                 torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
                 best = spearman
