@@ -2,25 +2,32 @@ import torch
 import pandas as pd
 import numpy as np
 import sys
+from glob import glob
+for name in glob("variant_data_0420/*.csv"):
+    if 'protbert' in name or 'esm' in name: continue
+    data = pd.read_csv(name)
 
-data = pd.read_csv(f"{sys.argv[1]}.csv")
+    data = data.iloc[:, :-5]
+    name = name.split(".")[0]
+    try:
+        metrics = np.load(f"{name}.npy", allow_pickle=True)
+    except:
+        continue
+    print(name)
+    print(type(metrics))
+    sequence = open(name + ".txt").read()
 
-data = data.iloc[:, :-5]
+    from Bio.PDB.Polypeptide import three_to_one, one_to_three
 
-metrics = np.load(f"{sys.argv[1]}.npy", allow_pickle=True)
-sequence = sys.argv[2]
+    aa = list("ACDEFGHIKLMNPQRSTVWY")
+    aa_full_name = ["pr" + a for a in aa]
+    print(metrics.shape)
+    metrics = np.array(metrics)
+    metrics = np.exp(metrics)
+    
 
-from Bio.PDB.Polypeptide import three_to_one, one_to_three
+    prob = pd.DataFrame(metrics, columns=aa_full_name)
 
-aa = list("ACDEFGHIKLMNPQRSTVWY")
-aa_full_name = ["pr" + one_to_three(a) for a in aa]
-
-metrics = np.array(metrics)[0]
-metrics = np.exp(metrics)
-
-
-prob = pd.DataFrame(metrics, columns=aa_full_name)
-
-prob = pd.concat([data, prob], 1)
-prob['wtAA'] = pd.Series([one_to_three(a) for a in list(sequence)])
-prob.to_csv(f"{sys.argv[1]}_esm.csv")
+    prob = pd.concat([data, prob], 1)
+    prob['wtAA'] = pd.Series([a for a in list(sequence)])
+    prob.to_csv(f"{name}_esm.csv")
