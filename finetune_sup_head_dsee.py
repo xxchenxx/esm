@@ -159,7 +159,7 @@ def main(args):
     model = model.cuda().eval()
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
     optimizer1 = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
-    optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
+    optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 1000, weight_decay=5e-2)
     for name, p in model.named_parameters():
         print(name)
         if 'adapter' in name or 'sparse' in name:
