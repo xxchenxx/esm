@@ -160,11 +160,13 @@ class ProteinBertModel(nn.Module):
             padding_mask = None
 
         
-
+        noise_aug = False
         for layer_idx, layer in enumerate(self.layers):
             x, attn = layer(
                 x, self_attn_padding_mask=padding_mask, need_head_weights=need_head_weights
             )
+            if noise_aug and layer_idx > len(self.layers) - 3:
+                x = x + torch.randn(x.shape, device=x.device) * 0.1
             if (layer_idx + 1) in repr_layers:
                 hidden_representations[layer_idx + 1] = x.transpose(0, 1)
             if need_head_weights:
@@ -199,7 +201,7 @@ class ProteinBertModel(nn.Module):
         else:
             temp = None
             cls_logits = None
-
+            hidden = None
     
         result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits, "hidden": hidden}
         if need_head_weights:

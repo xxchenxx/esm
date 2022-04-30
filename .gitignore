@@ -27,3 +27,6 @@ __pycache__/
 *.swp
 *.log
 *~
+data/
+pdb/
+pretrained/

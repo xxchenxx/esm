@@ -17,6 +17,7 @@ import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
 
+from scipy.stats import spearmanr, pearsonr
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -134,14 +135,14 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=1, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -156,7 +157,7 @@ def main(args):
         pruning_model(model, args.pruning_ratio)
 
     model = model.cuda().eval()
-    linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 2)).cuda()
+    linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     for epoch in range(4):
@@ -169,11 +170,12 @@ def main(args):
                 toks = toks.cuda()
                 if args.truncate:
                     toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                with torch.no_grad():
+                    out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
                 hidden = out['hidden']
 
-                labels = torch.tensor(labels).cuda().long()
+                labels = torch.tensor(labels).cuda().float()
                 if args.mix:
                     lam = np.random.beta(0.2, 0.2)
                     rand_index = torch.randperm(hidden.size()[0]).cuda()
@@ -183,41 +185,49 @@ def main(args):
                     hiddens_b = hidden[rand_index]
                     hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
                     hiddens = linear(hiddens)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels_all_a) * lam + \
-                        F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels_all_b) * (1 - lam)
+                    loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_a) * lam + \
+                        F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_b) * (1 - lam)
                 else:
                     hiddens = linear(hidden)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], 2), labels)
+                    loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels)
                 loss.backward()
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-                if (1 + batch_idx) % 1000 == 0:
-                    with torch.no_grad():
-                        outputs = []
-                        tars = []
-                        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                            print(
-                                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                            )
-                            if torch.cuda.is_available() and not args.nogpu:
-                                toks = toks.to(device="cuda", non_blocking=True)
-                            if args.truncate:
-                                toks = toks[:, :1022]
-                            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                            hidden = out['hidden']
-                            logits = linear(hidden)
-                            labels = torch.tensor(labels).cuda().long()
-                            outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
-                            tars.append(labels.reshape(-1))
+            if (1 + batch_idx) % 1000 == 0:
+                with torch.no_grad():
+                    outputs = []
+                    tars = []
+                    for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                        print(
+                            f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                        )
+                        if torch.cuda.is_available() and not args.nogpu:
+                            toks = toks.to(device="cuda", non_blocking=True)
+                        # The model is trained on truncated sequences and passing longer ones in at
+                        # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+                        if args.truncate:
+                            toks = toks[:, :1022]
+                        out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                        hidden = out['hidden']
+                        logits = linear(hidden)
+                        labels = torch.tensor(labels).cuda().float()
                         
-                        outputs = torch.cat(outputs, 0)
-                        tars = torch.cat(tars, 0)
-                        print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
-                        acc = (outputs == tars).float().sum() / tars.nelement()
-                        if acc > best:
-                            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
-                            best = acc
+                        print(loss.item())
+
+                        outputs.append(logits.view(-1) * 10)
+                        tars.append(labels.reshape(-1))
+                    
+                    outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+                    tars = torch.cat(tars, 0).detach().cpu().numpy()
+                    spearman = spearmanr(outputs, tars)[0]
+                    print("EVALUATION:", spearman)
+                    pearson = pearsonr(outputs, tars)[0]
+                    print("PEAR EVALUATION:", pearson)
+                    #acc = (outputs == tars).float().sum() / tars.nelement()
+                    if spearman > best:
+                        torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                        best = spearman
         lr_scheduler.step()
         model.eval()
         with torch.no_grad():
@@ -236,20 +246,23 @@ def main(args):
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                 hidden = out['hidden']
                 logits = linear(hidden)
-                labels = torch.tensor(labels).cuda().long()
+                labels = torch.tensor(labels).cuda().float()
                 
                 print(loss.item())
 
-                outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
+                outputs.append(logits.view(-1) * 10)
                 tars.append(labels.reshape(-1))
             
-            outputs = torch.cat(outputs, 0)
-            tars = torch.cat(tars, 0)
-            print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
-            acc = (outputs == tars).float().sum() / tars.nelement()
-            if acc > best:
-                torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
-                best = acc
+            outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+            tars = torch.cat(tars, 0).detach().cpu().numpy()
+            spearman = spearmanr(outputs, tars)[0]
+            print("EVALUATION:", spearman)
+            #acc = (outputs == tars).float().sum() / tars.nelement()
+            pearson = pearsonr(outputs, tars)[0]
+            print("PEAR EVALUATION:", pearson)
+            if spearman > best:
+                torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                best = spearman
     print(best)
 
 if __name__ == "__main__":

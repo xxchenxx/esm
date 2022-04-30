@@ -170,7 +170,7 @@ class PickleBatchedDataset(object):
                 fasta = ''.join(fasta).replace("\n", "")
             seqs.append(fasta)
             
-        labels = list(map(int, labels))
+        labels = list(map(float, labels))
         return cls(seqs, labels)
 
     def __len__(self):
@@ -885,6 +885,7 @@ class BatchConverter(object):
         batch_labels, seq_str_list = zip(*raw_batch)
         seq_encoded_list = [self.alphabet.encode(seq_str) for seq_str in seq_str_list]
         max_len = max(len(seq_encoded) for seq_encoded in seq_encoded_list)
+        print(max_len)
         tokens = torch.empty(
             (
                 batch_size,

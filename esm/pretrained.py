@@ -152,7 +152,7 @@ def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, nu
 
     expected_keys = set(model.state_dict().keys())
     found_keys = set(model_state.keys())
-
+    print(regression_data)
     if regression_data is None:
         expected_missing = {"contact_head.regression.weight", "contact_head.regression.bias", "temp_head.weight", "temp_head.bias"}
         error_msgs = []
