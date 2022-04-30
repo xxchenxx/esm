@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .multihead_attention import MultiheadAttention  # noqa
+from .sparse_multihead_attention import SparseMultiheadAttention
 from .axial_attention import ColumnSelfAttention, RowSelfAttention
 
 
@@ -92,22 +93,30 @@ class TransformerLayer(nn.Module):
         attention_heads,
         add_bias_kv=True,
         use_esm1b_layer_norm=False,
+        use_sparse=False,
     ):
         super().__init__()
         self.embed_dim = embed_dim
         self.ffn_embed_dim = ffn_embed_dim
         self.attention_heads = attention_heads
         self._init_submodules(add_bias_kv, use_esm1b_layer_norm)
-
+        self.use_sparse = use_sparse
     def _init_submodules(self, add_bias_kv, use_esm1b_layer_norm):
         BertLayerNorm = ESM1bLayerNorm if use_esm1b_layer_norm else ESM1LayerNorm
-
-        self.self_attn = MultiheadAttention(
-            self.embed_dim,
-            self.attention_heads,
-            add_bias_kv=add_bias_kv,
-            add_zero_attn=False,
-        )
+        if not self.use_sparse:
+            self.self_attn = MultiheadAttention(
+                self.embed_dim,
+                self.attention_heads,
+                add_bias_kv=add_bias_kv,
+                add_zero_attn=False,
+            )
+        else:
+            self.self_attn = SparseMultiheadAttention(
+                self.embed_dim,
+                self.attention_heads,
+                add_bias_kv=add_bias_kv,
+                add_zero_attn=False,
+            )
         self.self_attn_layer_norm = BertLayerNorm(self.embed_dim)
 
         self.fc1 = nn.Linear(self.embed_dim, self.ffn_embed_dim)

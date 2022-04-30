@@ -105,19 +105,9 @@ class MultiheadAttention(nn.Module):
         )
 
         self.k_proj = nn.Linear(self.kdim, embed_dim, bias=bias)
-        self.v_proj_adapter = nn.Sequential(
-            nn.Linear(self.vdim, 4, bias=False),
-            nn.Linear(4, embed_dim, bias=False)
-        )
-        self.v_proj_sparse = nn.Linear(self.vdim, embed_dim, bias=False)
-        self.q_proj_sparse = nn.Linear(embed_dim, embed_dim, bias=False)
         self.v_proj = nn.Linear(self.vdim, embed_dim, bias=bias)
         self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj_adapter = nn.Sequential(
-            nn.Linear(embed_dim, 4, bias=False),
-            nn.Linear(4, embed_dim, bias=False)
-        )
-        
+
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
 
         if add_bias_kv:
@@ -160,12 +150,6 @@ class MultiheadAttention(nn.Module):
             nn.init.xavier_normal_(self.bias_k)
         if self.bias_v is not None:
             nn.init.xavier_normal_(self.bias_v)
-
-        nn.init.xavier_uniform_(self.v_proj_adapter[0].weight)
-        nn.init.zeros_(self.v_proj_adapter[1].weight)
-        
-        nn.init.xavier_uniform_(self.q_proj_adapter[0].weight)
-        nn.init.zeros_(self.q_proj_adapter[1].weight)
 
     def forward(
         self,
@@ -253,24 +237,24 @@ class MultiheadAttention(nn.Module):
             saved_state = None
 
         if self.self_attention:
-            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query)) 
+            q = self.q_proj(query)  
             k = self.k_proj(query)
-            v = self.v_proj(query) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
+            v = self.v_proj(query) 
         elif self.encoder_decoder_attention:
             # encoder-decoder attention
-            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query))
+            q = self.q_proj(query) 
             if key is None:
                 assert value is None
                 k = v = None
             else:
                 k = self.k_proj(key)
-                v = self.v_proj(key) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
+                v = self.v_proj(key) 
 
         else:
             assert key is not None and value is not None
-            q = self.q_proj(query) + 4 * (self.q_proj_adapter(query) + self.q_proj_sparse(query))
+            q = self.q_proj(query) 
             k = self.k_proj(key)
-            v = self.v_proj(value) + 4 * (self.v_proj_adapter(query) + self.v_proj_sparse(query))
+            v = self.v_proj(value) 
         q *= self.scaling
 
         if self.bias_k is not None:
