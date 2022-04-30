@@ -89,28 +89,6 @@ def create_parser():
     parser.add_argument("--mix", action="store_true")
     return parser
 
-def pruning_model(model, px):
-    
-
-    print('start unstructured pruning for all conv layers')
-    parameters_to_prune =[]
-    for name, m in model.named_modules():
-        #if 'self_attn' in name and (not 'k' in name) and isinstance(m, nn.Linear):
-        #    print(f"Pruning {name}")
-        #    parameters_to_prune.append((m,'weight'))
-        if isinstance(m, TransformerLayer):
-            print(f"Pruning {name}.fc1")
-            parameters_to_prune.append((m.fc1,'weight'))
-            print(f"Pruning {name}.fc2")
-            parameters_to_prune.append((m.fc2,'weight'))
-
-    parameters_to_prune = tuple(parameters_to_prune)
-
-    prune.global_unstructured(
-        parameters_to_prune,
-        pruning_method=prune.L1Unstructured,
-        amount=px,
-    )
 
 def set_seed(args):
     torch.backends.cudnn.benchmark=False
@@ -151,9 +129,6 @@ def main(args):
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
     if args.checkpoint is not None:
         model.load_state_dict(torch.load(args.checkpoint))
-
-    if args.pruning_ratio > 0:
-        pruning_model(model, args.pruning_ratio)
 
     model = model.cuda().eval()
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
@@ -248,7 +223,7 @@ def main(args):
             print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
             acc = (outputs == tars).float().sum() / tars.nelement()
             if acc > best:
-                torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                 best = acc
     print(best)
 

@@ -260,7 +260,7 @@ def main(args):
             if (1 + batch_idx) % 1000 == 0:
                 spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
                 if spearman > best:
-                    torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
+                    torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
                     best = spearman
 
         lr_scheduler1.step()
@@ -268,7 +268,7 @@ def main(args):
         model.eval()
         spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
         if spearman > best:
-            torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
+            torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
             best = spearman
 
     print(best)

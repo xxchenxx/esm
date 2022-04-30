@@ -261,7 +261,7 @@ def main(args):
             pearson = pearsonr(outputs, tars)[0]
             print("PEAR EVALUATION:", pearson)
             if spearman > best:
-                torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                torch.save(linear.state_dict(), f"head-regression-{args.idx}.pt")
                 best = spearman
     print(best)
 

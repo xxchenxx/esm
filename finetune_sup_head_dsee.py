@@ -256,7 +256,7 @@ def main(args):
                 model.eval()
                 acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
                 if acc > best:
-                    torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                    torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
                     best = acc
 
         lr_scheduler1.step()
@@ -264,7 +264,7 @@ def main(args):
         model.eval()
         acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
         if acc > best:
-            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+            torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
             best = acc
     print(best)
 
