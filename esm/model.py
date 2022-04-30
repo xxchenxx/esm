@@ -160,7 +160,7 @@ class ProteinBertModel(nn.Module):
             padding_mask = None
 
         
-        noise_aug = True
+        noise_aug = False
         for layer_idx, layer in enumerate(self.layers):
             x, attn = layer(
                 x, self_attn_padding_mask=padding_mask, need_head_weights=need_head_weights

@@ -192,6 +192,32 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
+                if (1 + batch_idx) % 1000 == 0:
+                    with torch.no_grad():
+                        outputs = []
+                        tars = []
+                        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                            print(
+                                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                            )
+                            if torch.cuda.is_available() and not args.nogpu:
+                                toks = toks.to(device="cuda", non_blocking=True)
+                            if args.truncate:
+                                toks = toks[:, :1022]
+                            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                            hidden = out['hidden']
+                            logits = linear(hidden)
+                            labels = torch.tensor(labels).cuda().long()
+                            outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
+                            tars.append(labels.reshape(-1))
+                        
+                        outputs = torch.cat(outputs, 0)
+                        tars = torch.cat(tars, 0)
+                        print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
+                        acc = (outputs == tars).float().sum() / tars.nelement()
+                        if acc > best:
+                            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                            best = acc
         lr_scheduler.step()
         model.eval()
         with torch.no_grad():
