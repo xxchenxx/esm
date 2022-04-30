@@ -49,7 +49,7 @@ class ProteinBertModel(nn.Module):
             help="number of attention heads",
         )
 
-    def __init__(self, args, alphabet):
+    def __init__(self, args, alphabet, num_classes=2):
         super().__init__()
         self.args = args
         self.alphabet_size = len(alphabet)
@@ -60,6 +60,7 @@ class ProteinBertModel(nn.Module):
         self.prepend_bos = alphabet.prepend_bos
         self.append_eos = alphabet.append_eos
         self.emb_layer_norm_before = getattr(self.args, "emb_layer_norm_before", False)
+        self.num_classes = num_classes
         if self.args.arch == "roberta_large":
             self.model_version = "ESM-1b"
             self._init_submodules_esm1b()
@@ -106,6 +107,8 @@ class ProteinBertModel(nn.Module):
             output_dim=self.alphabet_size,
             weight=self.embed_tokens.weight,
         )
+        self.temp_head = nn.Linear(self.args.embed_dim, 1)
+        self.classification_head = nn.Linear(self.args.embed_dim, self.num_classes)
 
     def _init_submodules_esm1(self):
         self._init_submodules_common()
@@ -115,8 +118,9 @@ class ProteinBertModel(nn.Module):
         self.embed_out_bias = None
         if self.args.final_bias:
             self.embed_out_bias = nn.Parameter(torch.zeros(self.alphabet_size))
+        
 
-    def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False):
+    def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False, return_temp=False):
         if return_contacts:
             need_head_weights = True
 
@@ -155,6 +159,8 @@ class ProteinBertModel(nn.Module):
         if not padding_mask.any():
             padding_mask = None
 
+        
+
         for layer_idx, layer in enumerate(self.layers):
             x, attn = layer(
                 x, self_attn_padding_mask=padding_mask, need_head_weights=need_head_weights
@@ -172,12 +178,30 @@ class ProteinBertModel(nn.Module):
             # last hidden representation should have layer norm applied
             if (layer_idx + 1) in repr_layers:
                 hidden_representations[layer_idx + 1] = x
+
             x = self.lm_head(x)
         else:
             x = F.linear(x, self.embed_out, bias=self.embed_out_bias)
             x = x.transpose(0, 1)  # (T, B, E) => (B, T, E)
+            temp = None
+            cls_logits = None
 
-        result = {"logits": x, "representations": hidden_representations}
+        if return_temp:
+            hiddens = hidden_representations[33]
+            hidden = []
+            for i in range(hiddens.shape[0]):
+                mask = tokens[i] >= 2
+
+                hidden.append(hiddens[i][mask].mean(0))
+            hidden = torch.stack(hidden)
+            temp = self.temp_head(hidden)
+            cls_logits = self.classification_head(hidden)
+        else:
+            temp = None
+            cls_logits = None
+
+    
+        result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits, "hidden": hidden}
         if need_head_weights:
             # attentions: B x L x H x T x T
             attentions = torch.stack(attn_weights, 1)
@@ -328,6 +352,7 @@ class MSATransformer(nn.Module):
             weight=self.embed_tokens.weight,
         )
 
+
     def forward(self, tokens, repr_layers=[], need_head_weights=False, return_contacts=False):
         if return_contacts:
             need_head_weights = True
@@ -388,9 +413,10 @@ class MSATransformer(nn.Module):
         # last hidden representation should have layer norm applied
         if (layer_idx + 1) in repr_layers:
             hidden_representations[layer_idx + 1] = x
-        x = self.lm_head(x)
+        hidden = x
+        x = self.lm_head(hidden)
 
-        result = {"logits": x, "representations": hidden_representations}
+        result = {"logits": x, "representations": hidden_representations, "hidden": hidden}
         if need_head_weights:
             # col_attentions: B x L x H x C x R x R
             col_attentions = torch.stack(col_attn_weights, 1)

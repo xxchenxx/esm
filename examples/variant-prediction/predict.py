@@ -90,7 +90,10 @@ def create_parser():
 
 
 def label_row(row, sequence, token_probs, alphabet, offset_idx):
-    wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
+    try:
+        wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
+    except:
+        return 0
     assert sequence[idx] == wt, "The listed wildtype does not match the provided sequence"
 
     wt_encoded, mt_encoded = alphabet.get_idx(wt), alphabet.get_idx(mt)
@@ -137,6 +140,10 @@ def main(args):
     for model_location in args.model_location:
         model, alphabet = pretrained.load_model_and_alphabet(model_location)
         model.eval()
+        state_dict = torch.load("finetuned_0.pkl", map_location='cpu')
+        #del state_dict["emb_layer_norm_before.weight"]
+        #del state_dict["emb_layer_norm_before.bias"]
+        model.load_state_dict(state_dict)
         if torch.cuda.is_available() and not args.nogpu:
             model = model.cuda()
             print("Transferred model to GPU")
@@ -187,6 +194,7 @@ def main(args):
                     ),
                     axis=1,
                 )
+
             elif args.scoring_strategy == "masked-marginals":
                 all_token_probs = []
                 for i in tqdm(range(batch_tokens.size(1))):
