@@ -99,8 +99,9 @@ class TransformerLayer(nn.Module):
         self.embed_dim = embed_dim
         self.ffn_embed_dim = ffn_embed_dim
         self.attention_heads = attention_heads
-        self._init_submodules(add_bias_kv, use_esm1b_layer_norm)
         self.use_sparse = use_sparse
+        self._init_submodules(add_bias_kv, use_esm1b_layer_norm)
+        
     def _init_submodules(self, add_bias_kv, use_esm1b_layer_norm):
         BertLayerNorm = ESM1bLayerNorm if use_esm1b_layer_norm else ESM1LayerNorm
         if not self.use_sparse:
