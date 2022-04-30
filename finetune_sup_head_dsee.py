@@ -15,7 +15,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
-from esm.modules import TransformerLayer
+from esm.modules import TransformerLayer, SparseMultiheadAttention
+from tqdm import tqdm
 
 
 def create_parser():
@@ -123,7 +124,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
@@ -134,7 +135,7 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
@@ -161,14 +162,62 @@ def main(args):
     optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
     for name, p in model.named_parameters():
         print(name)
-        if 'adapter' in name:
+        if 'adapter' in name or 'sparse' in name:
             p.requires_grad = True
         else:
             p.requires_grad = False
-    lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
-    lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / 100, steps_per_epoch=1, epochs=int(20))
+    
+    for name, p in model.named_parameters():
+        print(name, p.requires_grad)
+    for name, m in model.named_modules():
+        if isinstance(m, SparseMultiheadAttention):
+            Q_weight = m.q_proj.weight
+            V_weight = m.v_proj.weight
+            Q_weight = Q_weight.detach().cpu()
+            V_weight = V_weight.detach().cpu()
+            U_Q = torch.randn((Q_weight.shape[0], 1)).to(Q_weight.device)
+            V_Q = torch.randn((1, Q_weight.shape[1])).to(Q_weight.device)
+            S_Q = torch.zeros_like(Q_weight)
 
-    for epoch in range(20):
+            U_V = torch.randn((V_weight.shape[0], 1)).to(V_weight.device)
+            V_V = torch.randn((1, V_weight.shape[1])).to(V_weight.device)
+            S_V = torch.zeros_like(V_weight)
+            last_S_Q = torch.zeros_like(Q_weight)
+
+            for rank in tqdm(range(20)):
+                S_Q = torch.zeros_like(Q_weight)
+                S_V = torch.zeros_like(Q_weight)
+                for _ in range(10):
+                    U_Q = torch.qr((Q_weight - S_Q) @ V_Q.T)[0]
+                    V_Q = U_Q.T @ (Q_weight - S_Q)
+                    S_Q = Q_weight - U_Q @ V_Q
+                    q = 0.01
+                    S_Q[S_Q.abs() < q] = 0
+                    U_V = torch.qr((V_weight - S_V) @ V_V.T)[0]
+                    V_V = U_V.T @ (V_weight - S_V)
+                    S_V = V_weight - U_V @ V_V
+                    S_V[S_V.abs() < q] = 0
+
+                E_Q = Q_weight - U_Q @ V_Q - S_Q
+                E_V = V_weight - U_V @ V_V - S_V
+                
+                E_Q_vector = torch.qr(E_Q)[1][:1]
+                E_V_vector = torch.qr(E_V)[1][:1]
+                
+                V_Q = torch.cat([V_Q, E_Q_vector], 0)
+                V_V = torch.cat([V_V, E_V_vector], 0)
+            
+            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - 64)
+            S_Q = (S_Q.abs() >= q).float()
+            #print(S_Q)
+            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - 64)
+            S_V = (S_V.abs() >= v).float()
+            prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
+            prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))
+    lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
+    lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / 1000, steps_per_epoch=1, epochs=int(20))
+
+    for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
@@ -203,6 +252,37 @@ def main(args):
                 linear.zero_grad()
                 model.zero_grad()
                 print(loss.item())
+
+                if (batch_idx + 1) % 1000 == 0:
+                    model.eval()
+                    with torch.no_grad():
+                        outputs = []
+                        tars = []
+                        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                            print(
+                                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                            )
+                            if torch.cuda.is_available() and not args.nogpu:
+                                toks = toks.to(device="cuda", non_blocking=True)
+                            # The model is trained on truncated sequences and passing longer ones in at
+                            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+                            if args.truncate:
+                                toks = toks[:, :1022]
+                            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                            hidden = out['hidden']
+                            logits = linear(hidden)
+                            labels = torch.tensor(labels).cuda().long()
+                            outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
+                            tars.append(labels.reshape(-1))
+                        
+                        outputs = torch.cat(outputs, 0)
+                        tars = torch.cat(tars, 0)
+                        print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
+                        acc = (outputs == tars).float().sum() / tars.nelement()
+                        if acc > best:
+                            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                            best = acc
+
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
