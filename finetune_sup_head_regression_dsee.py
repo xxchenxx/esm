@@ -225,55 +225,55 @@ def main(args):
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
-            with torch.autograd.set_detect_anomaly(True):
-                print(
-                    f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
-                )
-                toks = toks.cuda()
-                if args.truncate:
-                    toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+        
+            print(
+                f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
+            )
+            toks = toks.cuda()
+            if args.truncate:
+                toks = toks[:, :1022]
+            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                hidden = out['hidden']
+            hidden = out['hidden']
 
-                labels = torch.tensor(labels).cuda().float()
-                if args.mix:
-                    lam = np.random.beta(0.2, 0.2)
-                    rand_index = torch.randperm(hidden.size()[0]).cuda()
-                    labels_all_a = labels
-                    labels_all_b = labels[rand_index]
-                    hiddens_a = hidden
-                    hiddens_b = hidden[rand_index]
-                    hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
-                    hiddens = linear(hiddens)
-                    loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_a) * lam + \
-                        F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_b) * (1 - lam)
-                else:
-                    hiddens = linear(hidden)
-                    loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels)
-                loss.backward()
-                optimizer1.step()
-                optimizer2.step()
-                linear.zero_grad()
-                print(loss.item())
+            labels = torch.tensor(labels).cuda().float()
+            if args.mix:
+                lam = np.random.beta(0.2, 0.2)
+                rand_index = torch.randperm(hidden.size()[0]).cuda()
+                labels_all_a = labels
+                labels_all_b = labels[rand_index]
+                hiddens_a = hidden
+                hiddens_b = hidden[rand_index]
+                hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
+                hiddens = linear(hiddens)
+                loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_a) * lam + \
+                    F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_b) * (1 - lam)
+            else:
+                hiddens = linear(hidden)
+                loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels)
+            loss.backward()
+            optimizer1.step()
+            optimizer2.step()
+            linear.zero_grad()
+            print(loss.item())
 
             if (1 + batch_idx) % 1000 == 0:
-                spearman = evaluate(model, linear, test_data_loader)
+                spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
                 if spearman > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
                     best = spearman
-                    
+
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        spearman = evaluate(model, linear, test_data_loader)
+        spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
         if spearman > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
             best = spearman
 
     print(best)
 
-def evaluate(model, linear, test_data_loader):
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches):
     with torch.no_grad():
         outputs = []
         tars = []
@@ -291,9 +291,6 @@ def evaluate(model, linear, test_data_loader):
             hidden = out['hidden']
             logits = linear(hidden)
             labels = torch.tensor(labels).cuda().float()
-            
-            print(loss.item())
-
             outputs.append(logits.reshape(-1, 1).view(-1) * 10)
             tars.append(labels.reshape(-1))
         

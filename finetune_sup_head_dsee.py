@@ -220,103 +220,80 @@ def main(args):
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
-            with torch.autograd.set_detect_anomaly(True):
-                print(
-                    f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
-                )
-                toks = toks.cuda()
-                if args.truncate:
-                    toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+            print(
+                f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
+            )
+            toks = toks.cuda()
+            if args.truncate:
+                toks = toks[:, :1022]
+            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                hidden = out['hidden']
+            hidden = out['hidden']
 
-                labels = torch.tensor(labels).cuda().long()
-                if args.mix:
-                    lam = np.random.beta(0.2, 0.2)
-                    rand_index = torch.randperm(hidden.size()[0]).cuda()
-                    labels_all_a = labels
-                    labels_all_b = labels[rand_index]
-                    hiddens_a = hidden
-                    hiddens_b = hidden[rand_index]
-                    hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
-                    hiddens = linear(hiddens)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
-                        F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
-                else:
-                    hiddens = linear(hidden)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
-                loss.backward()
-                optimizer1.step()
-                optimizer2.step()
-                linear.zero_grad()
-                model.zero_grad()
-                print(loss.item())
+            labels = torch.tensor(labels).cuda().long()
+            if args.mix:
+                lam = np.random.beta(0.2, 0.2)
+                rand_index = torch.randperm(hidden.size()[0]).cuda()
+                labels_all_a = labels
+                labels_all_b = labels[rand_index]
+                hiddens_a = hidden
+                hiddens_b = hidden[rand_index]
+                hiddens = lam * hiddens_a + (1 - lam) * hiddens_b
+                hiddens = linear(hiddens)
+                loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
+                    F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
+            else:
+                hiddens = linear(hidden)
+                loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
+            loss.backward()
+            optimizer1.step()
+            optimizer2.step()
+            linear.zero_grad()
+            model.zero_grad()
+            print(loss.item())
 
-                if (batch_idx + 1) % 1000 == 0:
-                    model.eval()
-                    with torch.no_grad():
-                        outputs = []
-                        tars = []
-                        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                            print(
-                                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                            )
-                            if torch.cuda.is_available() and not args.nogpu:
-                                toks = toks.to(device="cuda", non_blocking=True)
-                            # The model is trained on truncated sequences and passing longer ones in at
-                            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                            if args.truncate:
-                                toks = toks[:, :1022]
-                            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                            hidden = out['hidden']
-                            logits = linear(hidden)
-                            labels = torch.tensor(labels).cuda().long()
-                            outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
-                            tars.append(labels.reshape(-1))
-                        
-                        outputs = torch.cat(outputs, 0)
-                        tars = torch.cat(tars, 0)
-                        print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
-                        acc = (outputs == tars).float().sum() / tars.nelement()
-                        if acc > best:
-                            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
-                            best = acc
+            if (batch_idx + 1) % 1000 == 0:
+                model.eval()
+                acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+                if acc > best:
+                    torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                    best = acc
 
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        with torch.no_grad():
-            outputs = []
-            tars = []
-            for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                )
-                if torch.cuda.is_available() and not args.nogpu:
-                    toks = toks.to(device="cuda", non_blocking=True)
-                # The model is trained on truncated sequences and passing longer ones in at
-                # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                if args.truncate:
-                    toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                hidden = out['hidden']
-                logits = linear(hidden)
-                labels = torch.tensor(labels).cuda().long()
-                
-                print(loss.item())
-
-                outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
-                tars.append(labels.reshape(-1))
-            
-            outputs = torch.cat(outputs, 0)
-            tars = torch.cat(tars, 0)
-            print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
-            acc = (outputs == tars).float().sum() / tars.nelement()
-            if acc > best:
-                torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
-                best = acc
+        acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+        if acc > best:
+            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+            best = acc
     print(best)
+
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches):
+    with torch.no_grad():
+        outputs = []
+        tars = []
+        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+            print(
+                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+            )
+            if torch.cuda.is_available() and not args.nogpu:
+                toks = toks.to(device="cuda", non_blocking=True)
+            # The model is trained on truncated sequences and passing longer ones in at
+            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+            if args.truncate:
+                toks = toks[:, :1022]
+            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+            hidden = out['hidden']
+            logits = linear(hidden)
+            labels = torch.tensor(labels).cuda().long()
+            outputs.append(torch.topk(logits.reshape(-1, args.num_classes), 1)[1].view(-1))
+            tars.append(labels.reshape(-1))
+        
+        outputs = torch.cat(outputs, 0)
+        tars = torch.cat(tars, 0)
+        print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
+        acc = (outputs == tars).float().sum() / tars.nelement()
+        return acc
 
 if __name__ == "__main__":
     parser = create_parser()
