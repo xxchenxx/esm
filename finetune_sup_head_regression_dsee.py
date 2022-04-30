@@ -256,77 +256,55 @@ def main(args):
                 optimizer2.step()
                 linear.zero_grad()
                 print(loss.item())
-            if (1 + batch_idx) % 1000 == 0:
-                with torch.no_grad():
-                    outputs = []
-                    tars = []
-                    for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                        print(
-                            f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                        )
-                        if torch.cuda.is_available() and not args.nogpu:
-                            toks = toks.to(device="cuda", non_blocking=True)
-                        # The model is trained on truncated sequences and passing longer ones in at
-                        # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                        if args.truncate:
-                            toks = toks[:, :1022]
-                        out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                        hidden = out['hidden']
-                        logits = linear(hidden)
-                        labels = torch.tensor(labels).cuda().float()
-                        
-                        print(loss.item())
 
-                        outputs.append(logits.reshape(-1, 1).view(-1) * 10)
-                        tars.append(labels.reshape(-1))
+            if (1 + batch_idx) % 1000 == 0:
+                spearman = evaluate(model, linear, test_data_loader)
+                if spearman > best:
+                    torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
+                    best = spearman
                     
-                    outputs = torch.cat(outputs, 0).detach().cpu().numpy()
-                    tars = torch.cat(tars, 0).detach().cpu().numpy()
-                    spearman = spearmanr(outputs, tars)[0]
-                    print("SPEAR EVALUATION:", spearman)
-                    pearson = pearsonr(outputs, tars)[0]
-                    print("PEAR EVALUATION:", pearson)
-                    #acc = (outputs == tars).float().sum() / tars.nelement()
-                    if spearman > best:
-                        torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
-                        best = spearman
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        with torch.no_grad():
-            outputs = []
-            tars = []
-            for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
-                )
-                if torch.cuda.is_available() and not args.nogpu:
-                    toks = toks.to(device="cuda", non_blocking=True)
-                # The model is trained on truncated sequences and passing longer ones in at
-                # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                if args.truncate:
-                    toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                hidden = out['hidden']
-                logits = linear(hidden)
-                labels = torch.tensor(labels).cuda().float()
-                
-                print(loss.item())
+        spearman = evaluate(model, linear, test_data_loader)
+        if spearman > best:
+            torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
+            best = spearman
 
-                outputs.append(logits.reshape(-1, 1).view(-1) * 10)
-                tars.append(labels.reshape(-1))
-            
-            outputs = torch.cat(outputs, 0).detach().cpu().numpy()
-            tars = torch.cat(tars, 0).detach().cpu().numpy()
-            spearman = spearmanr(outputs, tars)[0]
-            print("EVALUATION:", spearman)
-            pearson = pearsonr(outputs, tars)[0]
-            print("PEAR EVALUATION:", pearson)
-            #acc = (outputs == tars).float().sum() / tars.nelement()
-            if spearman > best:
-                torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"regression-{args.idx}.pt")
-                best = spearman
     print(best)
+
+def evaluate(model, linear, test_data_loader):
+    with torch.no_grad():
+        outputs = []
+        tars = []
+        for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+            print(
+                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+            )
+            if torch.cuda.is_available() and not args.nogpu:
+                toks = toks.to(device="cuda", non_blocking=True)
+            # The model is trained on truncated sequences and passing longer ones in at
+            # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+            if args.truncate:
+                toks = toks[:, :1022]
+            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+            hidden = out['hidden']
+            logits = linear(hidden)
+            labels = torch.tensor(labels).cuda().float()
+            
+            print(loss.item())
+
+            outputs.append(logits.reshape(-1, 1).view(-1) * 10)
+            tars.append(labels.reshape(-1))
+        
+        outputs = torch.cat(outputs, 0).detach().cpu().numpy()
+        tars = torch.cat(tars, 0).detach().cpu().numpy()
+        spearman = spearmanr(outputs, tars)[0]
+        print("SPEAR EVALUATION:", spearman)
+        pearson = pearsonr(outputs, tars)[0]
+        print("PEAR EVALUATION:", pearson)
+        #acc = (outputs == tars).float().sum() / tars.nelement()
+        return spearman
 
 if __name__ == "__main__":
     parser = create_parser()
