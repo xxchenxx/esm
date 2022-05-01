@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 from glob import glob
-names = glob("variant_data_0420/*.txt")
+names = glob("variant_data_0430/*.txt")
 
 from transformers import BertTokenizer
 tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', do_lower_case=False )
@@ -13,7 +13,7 @@ for name in tqdm(names):
     data = pd.read_csv(name)
     name = name.split(".")[0]
     data = data.iloc[:, :-5]
-    metrics = torch.load(f"{name}_prot.pth.ta", map_location='cpu')
+    metrics = torch.load(f"{name}_prot.pth.tar", map_location='cpu')
 
     sequence = open(name + ".txt").read()
     

@@ -112,7 +112,7 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 

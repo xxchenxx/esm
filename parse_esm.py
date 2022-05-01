@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 from glob import glob
-for name in glob("variant_data_0420/*.csv"):
+for name in glob("variant_data_0430/*.csv"):
     if 'protbert' in name or 'esm' in name: continue
     data = pd.read_csv(name)
 
