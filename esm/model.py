@@ -49,7 +49,7 @@ class ProteinBertModel(nn.Module):
             help="number of attention heads",
         )
 
-    def __init__(self, args, alphabet, num_classes=2, use_sparse=False):
+    def __init__(self, args, alphabet, num_classes=2, use_sparse=False, noise_aug=False):
         super().__init__()
         self.args = args
         self.alphabet_size = len(alphabet)
@@ -62,6 +62,10 @@ class ProteinBertModel(nn.Module):
         self.emb_layer_norm_before = getattr(self.args, "emb_layer_norm_before", False)
         self.num_classes = num_classes
         self.use_sparse = use_sparse
+        self.noise_aug = noise_aug
+
+        print(f"Noise Augmentation: {noise_aug}")
+
         if self.args.arch == "roberta_large":
             self.model_version = "ESM-1b"
             self._init_submodules_esm1b()
@@ -162,12 +166,11 @@ class ProteinBertModel(nn.Module):
             padding_mask = None
 
         
-        noise_aug = False
         for layer_idx, layer in enumerate(self.layers):
             x, attn = layer(
                 x, self_attn_padding_mask=padding_mask, need_head_weights=need_head_weights
             )
-            if noise_aug and layer_idx > len(self.layers) - 3:
+            if self.noise_aug and layer_idx > len(self.layers) - 3:
                 x = x + torch.randn(x.shape, device=x.device) * 0.1
             if (layer_idx + 1) in repr_layers:
                 hidden_representations[layer_idx + 1] = x.transpose(0, 1)

@@ -88,6 +88,8 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--mix", action="store_true")
+    parser.add_argument("--noise", action="store_true")
+    parser.add_argument("--adv", action="store_true")
     return parser
 
 def pruning_model(model, px):
@@ -124,7 +126,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
