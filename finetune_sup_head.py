@@ -119,7 +119,7 @@ def main(args):
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=1, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
