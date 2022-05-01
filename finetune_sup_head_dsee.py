@@ -256,7 +256,7 @@ def main(args):
             model.zero_grad()
             print(loss.item())
 
-            if (batch_idx + 1) % 1000 == 0:
+            if (batch_idx + 1) % 20000 == 0:
                 model.eval()
                 acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
                 if acc > best:

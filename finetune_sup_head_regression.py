@@ -194,7 +194,7 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-            if (1 + batch_idx) % 1000 == 0:
+            if (batch_idx + 1) % 20000 == 0:
                 with torch.no_grad():
                     outputs = []
                     tars = []
