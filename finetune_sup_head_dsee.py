@@ -242,6 +242,8 @@ def main(args):
                 hiddens = linear(hiddens)
                 loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                     F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
+            elif args.adv:
+                hiddens = linear(hidden)
             else:
                 hiddens = linear(hidden)
                 loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
