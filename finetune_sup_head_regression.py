@@ -221,7 +221,7 @@ def main(args):
                     outputs = torch.cat(outputs, 0).detach().cpu().numpy()
                     tars = torch.cat(tars, 0).detach().cpu().numpy()
                     spearman = spearmanr(outputs, tars)[0]
-                    print("EVALUATION:", spearman)
+                    print("SPEAR EVALUATION:", spearman)
                     pearson = pearsonr(outputs, tars)[0]
                     print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
@@ -256,7 +256,7 @@ def main(args):
             outputs = torch.cat(outputs, 0).detach().cpu().numpy()
             tars = torch.cat(tars, 0).detach().cpu().numpy()
             spearman = spearmanr(outputs, tars)[0]
-            print("EVALUATION:", spearman)
+            print("SPEAR EVALUATION:", spearman)
             #acc = (outputs == tars).float().sum() / tars.nelement()
             pearson = pearsonr(outputs, tars)[0]
             print("PEAR EVALUATION:", pearson)
