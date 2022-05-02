@@ -89,6 +89,7 @@ def create_parser():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--mix", action="store_true")
     parser.add_argument("--adv", action="store_true")
+    parser.add_argument("--aadv", action="store_true")
 
     return parser
 
@@ -165,6 +166,10 @@ def main(args):
                         F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
                 elif args.adv:
                     
+                    hidden_adv = PGD_classification(hidden, linear, labels, steps=5, eps=3/255, num_classes=args.num_classes)
+                    hiddens = linear(hidden_adv)
+                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
+                elif args.aadv:
                     hidden_adv = PGD_classification(hidden, linear, labels, steps=5, eps=3/255, num_classes=args.num_classes)
                     hiddens = linear(hidden_adv)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
