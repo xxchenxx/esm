@@ -259,7 +259,7 @@ def main(args):
             linear.zero_grad()
             print(loss.item())
 
-            if (1 + batch_idx) % 1000 == 0:
+            if (batch_idx + 1) % 20000 == 0:
                 spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
                 if spearman > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")

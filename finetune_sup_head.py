@@ -16,6 +16,7 @@ import torch.nn.functional as F
 import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
+from esm.utils import PGD_classification
 
 
 def create_parser():
@@ -87,6 +88,8 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--mix", action="store_true")
+    parser.add_argument("--adv", action="store_true")
+
     return parser
 
 
@@ -160,6 +163,11 @@ def main(args):
                     hiddens = linear(hiddens)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                         F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
+                elif args.adv:
+                    
+                    hidden_adv = PGD_classification(hidden, linear, labels, steps=5, eps=3/255, num_classes=args.num_classes)
+                    hiddens = linear(hidden_adv)
+                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
                 else:
                     hiddens = linear(hidden)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
@@ -167,7 +175,7 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-                if (1 + batch_idx) % 1000 == 0:
+                if (batch_idx + 1) % 20000 == 0:
                     with torch.no_grad():
                         outputs = []
                         tars = []
