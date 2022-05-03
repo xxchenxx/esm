@@ -11,7 +11,8 @@
 # -----------------------------------------------------------------
 module load cuda/11.3
 module load cudnn/8.2
-
+cd /work2/08090/tlc619/frontera/alphafold
+source /home1/08090/tlc619/.bashrc
 conda activate gcn
 cd $WORK2/esm
 git pull
