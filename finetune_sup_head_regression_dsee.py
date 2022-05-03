@@ -18,6 +18,7 @@ from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSV
 from esm.modules import TransformerLayer, SparseMultiheadAttention
 from tqdm import tqdm
 from scipy.stats import spearmanr, pearsonr
+from esm.utils import PGD_regression, PGD_regression_amino
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -250,6 +251,16 @@ def main(args):
                 hiddens = linear(hiddens)
                 loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_a) * lam + \
                     F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_b) * (1 - lam)
+            elif args.adv:
+                hidden_adv = PGD_regression(hidden, linear, labels, steps=1, eps=3/255, num_classes=1, gamma=0.001)
+                hiddens_adv = linear(hidden_adv)
+                hiddens_clean = linear(hidden)
+                loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], 1), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], 1), labels)) / 2
+            elif args.aadv:
+                hidden_adv = PGD_regression_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=1, gamma=0.001)
+                hiddens_adv = linear(hidden_adv)
+                hiddens_clean = linear(hidden)
+                loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], 1), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], 1), labels)) / 2
             else:
                 hiddens = linear(hidden)
                 loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels)
