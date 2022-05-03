@@ -79,7 +79,7 @@ def create_parser():
         "--lr",
         type=float,
         help="learning rates",
-        default=1e-6, 
+        default=1e-, 
     )
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
@@ -91,8 +91,9 @@ def create_parser():
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--noise", action="store_true")
-    parser.add_argument("--rank", type=int, default=4)
-
+    parser.add_argument("--rank", type=int, default=16)
+    parser.add_argument("--steps", type=int, default=1)
+    parser.add_argument("--gamma", type=float, default=1e-3)
     return parser
 
 
@@ -221,12 +222,12 @@ def main(args):
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                         F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
                 elif args.adv:
-                    hidden_adv = PGD_classification(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                    hidden_adv = PGD_classification(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=args.num_classes, gamma=args.gamma)
                     hiddens_adv = linear(hidden_adv)
                     hiddens_clean = linear(hidden)
                     loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
                 elif args.aadv:
-                    hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                    hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=args.num_classes, gamma=args.gamma)
                     hiddens_adv = linear(hidden_adv)
                     hiddens_clean = linear(hidden)
                     loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
@@ -245,7 +246,7 @@ def main(args):
                         tars = []
                         for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                             print(
-                                f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
+                                f"Processing {batch_idx + 1} of {len(test_data_loader)} batcdhes ({toks.size(0)} sequences)"
                             )
                             if torch.cuda.is_available() and not args.nogpu:
                                 toks = toks.to(device="cuda", non_blocking=True)
@@ -263,7 +264,7 @@ def main(args):
                         print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
                         acc = (outputs == tars).float().sum() / tars.nelement()
                         if acc > best:
-                            torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
+                            torch.save(linear.state_dict(), f"S-classification-{args.idx}.pt")
                             best = acc
         lr_scheduler1.step()
         lr_scheduler2.step()
@@ -296,7 +297,7 @@ def main(args):
             print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
             acc = (outputs == tars).float().sum() / tars.nelement()
             if acc > best:
-                torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
+                torch.save(linear.state_dict(), f"S-classification-{args.idx}.pt")
                 best = acc
     print(best)
 
