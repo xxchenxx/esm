@@ -59,7 +59,7 @@ def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
         index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
-        x_adv.data.index_add_(0, index, grad0[index])
+        x_adv.data.index_add_(0, index, update[index])
 
         if clip:
             linfball_proj(x, eps, x_adv, in_place=True)
@@ -112,7 +112,7 @@ def PGD_regression_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
         index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
-        x_adv.data.index_add_(0, index, grad0[index])
+        x_adv.data.index_add_(0, index, update[index])
 
         if clip:
             linfball_proj(x, eps, x_adv, in_place=True)
