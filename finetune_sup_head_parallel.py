@@ -157,8 +157,9 @@ def main(args):
         pruning_model(model, args.pruning_ratio)
 
     model = model.cuda().eval()
-    model = torch.nn.parallel.DistributedDataParallel(model)
-    linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
+    model = torch.nn.data.DataParallel(model)
+    linear = nn.Sequential(nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
+    linear = torch.nn.data.DataParallel(linear)
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     for epoch in range(4):
@@ -175,7 +176,6 @@ def main(args):
                     out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
                 hidden = out['hidden']
-
                 labels = torch.tensor(labels).cuda().float()
                 if args.mix:
                     lam = np.random.beta(0.2, 0.2)
