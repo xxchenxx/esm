@@ -163,8 +163,7 @@ def main(args):
 
     model = model.cuda().eval()
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
-    optimizer1 = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
-    optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
+    
     for name, p in model.named_parameters():
         print(name)
         if 'adapter' in name or 'sparse' in name:
@@ -225,6 +224,8 @@ def main(args):
             S_V = (S_V.abs() >= v).float()
             prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
             prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))
+    optimizer1 = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
+    optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / 100, weight_decay=5e-2)
     lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / 1000, steps_per_epoch=1, epochs=int(20))
     for epoch in range(4):
