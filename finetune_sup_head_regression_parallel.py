@@ -138,16 +138,13 @@ def main(args):
 
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
-    train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
-    test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
-
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8#batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -218,9 +215,6 @@ def main(args):
                         hidden = out['hidden']
                         logits = linear(hidden)
                         labels = torch.tensor(labels).cuda().float()
-                        
-                        print(loss.item())
-
                         outputs.append(logits.view(-1) * 10)
                         tars.append(labels.reshape(-1))
                     
@@ -232,7 +226,7 @@ def main(args):
                     print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
                     if spearman > best:
-                        torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
+                        torch.save(linear.state_dict(), f"head-regression-{args.idx}.pt")
                         best = spearman
         lr_scheduler.step()
         model.eval()
@@ -241,7 +235,7 @@ def main(args):
             tars = []
             for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                 print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                    f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
                 )
                 if torch.cuda.is_available() and not args.nogpu:
                     toks = toks.to(device="cuda", non_blocking=True)

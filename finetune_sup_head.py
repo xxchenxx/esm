@@ -92,6 +92,7 @@ def create_parser():
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--rank", type=int, default=4)
+    parser.add_argument("--batch_size", type=int, default=4)
 
     return parser
 
@@ -116,14 +117,9 @@ def main(args):
 
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
-    train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=args.batch_size, shuffle=True,
     )
-    #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
-
-    test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
-
     test_data_loader = torch.utils.data.DataLoader(
         test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
     )
@@ -189,7 +185,7 @@ def main(args):
                         tars = []
                         for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                             print(
-                                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                                f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
                             )
                             if torch.cuda.is_available() and not args.nogpu:
                                 toks = toks.to(device="cuda", non_blocking=True)
@@ -216,7 +212,7 @@ def main(args):
             tars = []
             for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
                 print(
-                    f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                    f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
                 )
                 if torch.cuda.is_available() and not args.nogpu:
                     toks = toks.to(device="cuda", non_blocking=True)
