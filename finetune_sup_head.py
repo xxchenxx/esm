@@ -90,7 +90,7 @@ def create_parser():
     parser.add_argument("--mix", action="store_true")
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
-
+    parser.add_argument("--noise", action="store_true")
     return parser
 
 
@@ -105,7 +105,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
@@ -165,14 +165,15 @@ def main(args):
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                         F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
                 elif args.adv:
-                    
-                    hidden_adv = PGD_classification(hidden, linear, labels, steps=5, eps=3/255, num_classes=args.num_classes)
-                    hiddens = linear(hidden_adv)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
+                    hidden_adv = PGD_classification(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                    hiddens_adv = linear(hidden_adv)
+                    hiddens_clean = linear(hidden)
+                    loss = (F.cross_entropy(hiddens.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
                 elif args.aadv:
-                    hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=5, eps=3/255, num_classes=args.num_classes)
-                    hiddens = linear(hidden_adv)
-                    loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
+                    hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                    hiddens_adv = linear(hidden_adv)
+                    hiddens_clean = linear(hidden)
+                    loss = (F.cross_entropy(hiddens.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
                 else:
                     hiddens = linear(hidden)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)

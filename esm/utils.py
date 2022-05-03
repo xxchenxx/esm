@@ -56,7 +56,7 @@ def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps
         # loss_adv0 = torch.mean(out)
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
-        index = torch.randperm(x_adv.shape[0])[:10]
+        index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
         x_adv.data.index_add_(0, index, grad0[index])
 
         if clip:

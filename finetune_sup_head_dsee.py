@@ -17,7 +17,7 @@ import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer, SparseMultiheadAttention
 from tqdm import tqdm
-
+from esm.utils import PGD_classification, PGD_classification_amino
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -90,6 +90,7 @@ def create_parser():
     parser.add_argument("--mix", action="store_true")
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--adv", action="store_true")
+    parser.add_argument("--aadv", action="store_true")
     return parser
 
 def pruning_model(model, px):
@@ -245,7 +246,15 @@ def main(args):
                 loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                     F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
             elif args.adv:
-                hiddens = linear(hidden)
+                hidden_adv = PGD_classification(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                hiddens_adv = linear(hidden_adv)
+                hiddens_clean = linear(hidden)
+                loss = (F.cross_entropy(hiddens.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
+            elif args.aadv:
+                hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                hiddens_adv = linear(hidden_adv)
+                hiddens_clean = linear(hidden)
+                loss = (F.cross_entropy(hiddens.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
             else:
                 hiddens = linear(hidden)
                 loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
