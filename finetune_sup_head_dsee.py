@@ -92,7 +92,9 @@ def create_parser():
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--rank", type=int, default=8)
+    parser.add_argument("--sparse", type=int, default=64)
 
+    parser.add_argument("--num-workers", type=int, default=8)
     return parser
 
 def pruning_model(model, px):
@@ -138,14 +140,9 @@ def main(args):
 
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
-    train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8,
     )
-    #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
-
-    test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
-
     test_data_loader = torch.utils.data.DataLoader(
         test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8, #batch_sampler=test_batches
     )
@@ -210,10 +207,10 @@ def main(args):
                 V_Q = torch.cat([V_Q, E_Q_vector], 0)
                 V_V = torch.cat([V_V, E_V_vector], 0)
             
-            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - 64)
+            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - args.sparse)
             S_Q = (S_Q.abs() >= q).float()
             #print(S_Q)
-            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - 64)
+            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - args.sparse)
             S_V = (S_V.abs() >= v).float()
             prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
             prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))
