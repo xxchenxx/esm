@@ -93,7 +93,6 @@ def create_parser():
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--rank", type=int, default=8)
     parser.add_argument("--sparse", type=int, default=64)
-
     parser.add_argument("--num-workers", type=int, default=8)
     return parser
 
