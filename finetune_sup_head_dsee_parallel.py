@@ -94,7 +94,7 @@ def create_parser():
     parser.add_argument("--rank", type=int, default=16)
     parser.add_argument("--steps", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=1e-3)
-    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--num-workers", type=int, default=32)
     return parser
 
 
