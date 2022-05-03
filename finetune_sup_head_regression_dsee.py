@@ -91,6 +91,8 @@ def create_parser():
     parser.add_argument("--mix", action="store_true")
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--adv", action="store_true")
+    parser.add_argument("--aadv", action="store_true")
+
     return parser
 
 def pruning_model(model, px):
