@@ -1,0 +1,3 @@
+nohup python -u finetune_sup_head_regression_parallel.py esm1b_t33_650M_UR50S data/d1_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 2 --idx d1 --lr 2e-2 --split_file d1_0.pkl &
+
+nohup python -u finetune_sup_head_classification_parallel.py esm1b_t33_650M_UR50S data/d1_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 2 --idx d1 --lr 2e-2 --split_file d1_0_clasification.pkl &
