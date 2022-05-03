@@ -148,7 +148,8 @@ def main(args):
                 toks = toks.cuda()
                 if args.truncate:
                     toks = toks[:, :1022]
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                with torch.no_grad():
+                    out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
                 hidden = out['hidden']
 
