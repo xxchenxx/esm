@@ -268,11 +268,12 @@ def main(args):
             loss.backward()
             optimizer1.step()
             optimizer2.step()
+            model.zero_grad()
             linear.zero_grad()
             print(loss.item())
 
             if (batch_idx + 1) % 20000 == 0:
-                spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+                spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
                 if spearman > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
                     best = spearman
@@ -280,20 +281,20 @@ def main(args):
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+        spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
         if spearman > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
             best = spearman
 
     print(best)
 
-def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches):
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
     with torch.no_grad():
         outputs = []
         tars = []
         for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
             print(
-                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
             )
             if torch.cuda.is_available() and not args.nogpu:
                 toks = toks.to(device="cuda", non_blocking=True)

@@ -141,7 +141,7 @@ def main(args):
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8, drop_last=True
     )
-    #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
+
 
     test_data_loader = torch.utils.data.DataLoader(
         test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8, drop_last=True#batch_sampler=test_batches

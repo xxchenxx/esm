@@ -262,7 +262,7 @@ def main(args):
 
             if (batch_idx + 1) % 20000 == 0:
                 model.eval()
-                acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+                acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
                 if acc > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
                     best = acc
@@ -270,19 +270,19 @@ def main(args):
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches)
+        acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
         if acc > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
             best = acc
     print(best)
 
-def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, test_batches):
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
     with torch.no_grad():
         outputs = []
         tars = []
         for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
             print(
-                f"Processing {batch_idx + 1} of {len(test_batches)} batches ({toks.size(0)} sequences)"
+                f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
             )
             if torch.cuda.is_available() and not args.nogpu:
                 toks = toks.to(device="cuda", non_blocking=True)
