@@ -154,9 +154,6 @@ def main(args):
     if args.checkpoint is not None:
         model.load_state_dict(torch.load(args.checkpoint))
 
-    if args.pruning_ratio > 0:
-        pruning_model(model, args.pruning_ratio)
-
     model = model.cuda().eval()
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
     for name, p in model.named_parameters():
