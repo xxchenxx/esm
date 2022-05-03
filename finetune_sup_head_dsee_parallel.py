@@ -15,7 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
-from esm.modules import TransformerLayer
+from esm.modules import TransformerLayer, SparseMultiheadAttention
 from esm.utils import PGD_classification, PGD_classification_amino
 
 
