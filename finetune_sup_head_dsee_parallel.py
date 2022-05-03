@@ -79,7 +79,7 @@ def create_parser():
         "--lr",
         type=float,
         help="learning rates",
-        default=1e-, 
+        default=1e-2, 
     )
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
@@ -94,6 +94,7 @@ def create_parser():
     parser.add_argument("--rank", type=int, default=16)
     parser.add_argument("--steps", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=1e-3)
+    parser.add_argument("--num-workers", type=int, default=8)
     return parser
 
 
@@ -118,11 +119,11 @@ def main(args):
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, drop_last=True
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, drop_last=True, num_workers=args.num_workers,
     )
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, drop_last=True#batch_sampler=test_data_loader
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, drop_last=True, num_workers=args.num_workers, #batch_sampler=test_data_loader
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
