@@ -162,9 +162,9 @@ def main(args):
         pruning_model(model, args.pruning_ratio)
 
     model = model.cuda().eval()
-    model = torch.nn.data.DataParallel(model)
+    model = torch.nn.DataParallel(model)
     linear = nn.Sequential(nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
-    linear = torch.nn.data.DataParallel(linear)
+    linear = torch.nn.DataParallel(linear)
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     for epoch in range(4):
