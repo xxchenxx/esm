@@ -92,6 +92,7 @@ def create_parser():
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--rank", type=int, default=8)
+    parser.add_argument("--sparse", type=int, default=64)
 
     return parser
 
@@ -212,10 +213,10 @@ def main(args):
                 V_Q = torch.cat([V_Q, E_Q_vector], 0)
                 V_V = torch.cat([V_V, E_V_vector], 0)
             
-            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - 64)
+            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - args.sparse)
             S_Q = (S_Q.abs() >= q).float()
             #print(S_Q)
-            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - 64)
+            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - args.sparse)
             S_V = (S_V.abs() >= v).float()
             prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
             prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))

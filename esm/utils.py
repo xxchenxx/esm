@@ -18,7 +18,7 @@ def linfball_proj(center, radius, t, in_place=True):
 def PGD_classification(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None):
     
     # Compute loss
-    x_adv = x.clone()
+    x_adv = x.clone().detach()
     x_adv.requires_grad = True
     if randinit:
         # adv noise (-eps, eps)
@@ -43,7 +43,7 @@ def PGD_classification(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/25
 def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None):
     
     # Compute loss
-    x_adv = x.clone()
+    x_adv = x.clone().detach()
     x_adv.requires_grad = True
     if randinit:
         # adv noise (-eps, eps)
