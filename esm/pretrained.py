@@ -17,11 +17,11 @@ def _has_regression_weights(model_name):
     return not ("esm1v" in model_name or "esm_if" in model_name)
 
 
-def load_model_and_alphabet(model_name, mlm=False, num_classes=3, use_sparse=False, noise_aug=False):
+def load_model_and_alphabet(model_name, mlm=False, num_classes=3, use_sparse=False, noise_aug=False, rank=None):
     if model_name.endswith(".pt"):  # treat as filepath
-        return load_model_and_alphabet_local(model_name, num_classes, use_sparse, noise_aug)
+        return load_model_and_alphabet_local(model_name, num_classes, use_sparse, noise_aug, rank=rank)
     else:
-        return load_model_and_alphabet_hub(model_name, mlm, num_classes, use_sparse, noise_aug)
+        return load_model_and_alphabet_hub(model_name, mlm, num_classes, use_sparse, noise_aug, rank=rank)
 
 
 def load_hub_workaround(url):
@@ -45,17 +45,17 @@ def load_regression_hub(model_name):
     return regression_data
 
 
-def load_model_and_alphabet_hub(model_name, mlm=False, num_classes=3, use_sparse=False, noise_aug=False):
+def load_model_and_alphabet_hub(model_name, mlm=False, num_classes=3, use_sparse=False, noise_aug=False, rank=None):
     url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
     model_data = load_hub_workaround(url)
     if _has_regression_weights(model_name):
         regression_data = load_regression_hub(model_name)
     else:
         regression_data = None
-    return load_model_and_alphabet_core(model_data, regression_data, mlm, num_classes, use_sparse, noise_aug)
+    return load_model_and_alphabet_core(model_data, regression_data, mlm, num_classes, use_sparse, noise_aug, rank)
 
 
-def load_model_and_alphabet_local(model_location, num_classes, use_sparse, noise_aug):
+def load_model_and_alphabet_local(model_location, num_classes, use_sparse, noise_aug, rank=None):
     """ Load from local path. The regression weights need to be co-located """
     model_location = Path(model_location)
     model_data = torch.load(str(model_location), map_location="cpu")
@@ -65,7 +65,7 @@ def load_model_and_alphabet_local(model_location, num_classes, use_sparse, noise
         regression_data = torch.load(regression_location, map_location="cpu")
     else:
         regression_data = None
-    return load_model_and_alphabet_core(model_data, regression_data, False, num_classes, use_sparse, noise_aug)
+    return load_model_and_alphabet_core(model_data, regression_data, False, num_classes, use_sparse, noise_aug, rank)
 
 
 def has_emb_layer_norm_before(model_state):
@@ -73,7 +73,7 @@ def has_emb_layer_norm_before(model_state):
     return any(k.startswith("emb_layer_norm_before") for k, param in model_state.items())
 
 
-def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, num_classes=3, use_sparse=False, noise_aug=False):
+def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, num_classes=3, use_sparse=False, noise_aug=False, rank=None):
     if regression_data is not None:
         model_data["model"].update(regression_data["model"])
     if not mlm:
@@ -147,7 +147,7 @@ def load_model_and_alphabet_core(model_data, regression_data=None, mlm=False, nu
 
     model = model_type(
         Namespace(**model_args),
-        alphabet, num_classes, use_sparse=use_sparse, noise_aug=noise_aug
+        alphabet, num_classes, use_sparse=use_sparse, noise_aug=noise_aug, rank=rank
     )
 
     expected_keys = set(model.state_dict().keys())

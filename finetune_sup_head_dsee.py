@@ -91,6 +91,8 @@ def create_parser():
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
+    parser.add_argument("--rank", type=int, default=8)
+
     return parser
 
 def pruning_model(model, px):
@@ -127,7 +129,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
@@ -138,14 +140,14 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True,
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8,
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, #batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8, #batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

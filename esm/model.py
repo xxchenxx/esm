@@ -49,7 +49,7 @@ class ProteinBertModel(nn.Module):
             help="number of attention heads",
         )
 
-    def __init__(self, args, alphabet, num_classes=2, use_sparse=False, noise_aug=False):
+    def __init__(self, args, alphabet, num_classes=2, use_sparse=False, noise_aug=False, rank=None):
         super().__init__()
         self.args = args
         self.alphabet_size = len(alphabet)
@@ -63,6 +63,7 @@ class ProteinBertModel(nn.Module):
         self.num_classes = num_classes
         self.use_sparse = use_sparse
         self.noise_aug = noise_aug
+        self.rank = rank
 
         print(f"Noise Augmentation: {noise_aug}")
 
@@ -85,7 +86,8 @@ class ProteinBertModel(nn.Module):
                     self.args.attention_heads,
                     add_bias_kv=(self.model_version != "ESM-1b"),
                     use_esm1b_layer_norm=(self.model_version == "ESM-1b"),
-                    use_sparse=self.use_sparse
+                    use_sparse=self.use_sparse,
+                    rank=self.rank
                 )
                 for _ in range(self.args.layers)
             ]

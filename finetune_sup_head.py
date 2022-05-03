@@ -91,6 +91,8 @@ def create_parser():
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
     parser.add_argument("--noise", action="store_true")
+    parser.add_argument("--rank", type=int, default=4)
+
     return parser
 
 
@@ -105,7 +107,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise, rank=args.rank)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()

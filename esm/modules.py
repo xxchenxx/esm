@@ -94,12 +94,14 @@ class TransformerLayer(nn.Module):
         add_bias_kv=True,
         use_esm1b_layer_norm=False,
         use_sparse=False,
+        rank=None
     ):
         super().__init__()
         self.embed_dim = embed_dim
         self.ffn_embed_dim = ffn_embed_dim
         self.attention_heads = attention_heads
         self.use_sparse = use_sparse
+        self.rank = rank
         self._init_submodules(add_bias_kv, use_esm1b_layer_norm)
         
     def _init_submodules(self, add_bias_kv, use_esm1b_layer_norm):
@@ -117,6 +119,7 @@ class TransformerLayer(nn.Module):
                 self.attention_heads,
                 add_bias_kv=add_bias_kv,
                 add_zero_attn=False,
+                rank=self.rank
             )
         self.self_attn_layer_norm = BertLayerNorm(self.embed_dim)
 
