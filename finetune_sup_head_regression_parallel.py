@@ -139,12 +139,12 @@ def main(args):
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, shuffle=True, num_workers=8, drop_last=True
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
     test_data_loader = torch.utils.data.DataLoader(
-        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8#batch_sampler=test_batches
+        test_set, collate_fn=alphabet.get_batch_converter(), batch_size=4, num_workers=8, drop_last=True#batch_sampler=test_batches
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -211,6 +211,7 @@ def main(args):
                         # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
                         if args.truncate:
                             toks = toks[:, :1022]
+                        
                         out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                         hidden = out['hidden']
                         logits = linear(hidden)
