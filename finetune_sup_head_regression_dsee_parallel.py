@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer, SparseMultiheadAttention
-
+from tqdm import tqdm
 from scipy.stats import spearmanr, pearsonr
 
 def create_parser():
