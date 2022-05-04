@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import numpy as np
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer, SparseMultiheadAttention
-
+from tqdm import tqdm
 from scipy.stats import spearmanr, pearsonr
 
 def create_parser():
@@ -129,7 +129,7 @@ def main(args):
 
     set_seed(args)
     best = 0
-    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes)
+    model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
