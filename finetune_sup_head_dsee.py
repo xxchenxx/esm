@@ -95,7 +95,8 @@ def create_parser():
     parser.add_argument("--sparse", type=int, default=64)
     parser.add_argument("--lr-factor", type=int, default=1000)
     parser.add_argument("--num-workers", type=int, default=8)
-
+    parser.add_argument("--steps", type=int, default=1)
+    parser.add_argument("--gamma", type=float, default=1e-3)
     return parser
 
 def pruning_model(model, px):
@@ -243,12 +244,12 @@ def main(args):
                 loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_a) * lam + \
                     F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels_all_b) * (1 - lam)
             elif args.adv:
-                hidden_adv = PGD_classification(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                hidden_adv = PGD_classification(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=args.num_classes, gamma=args.gamma)
                 hiddens_adv = linear(hidden_adv)
                 hiddens_clean = linear(hidden)
                 loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2
             elif args.aadv:
-                hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=args.num_classes, gamma=0.001)
+                hidden_adv = PGD_classification_amino(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=args.num_classes, gamma=args.gamma)
                 hiddens_adv = linear(hidden_adv)
                 hiddens_clean = linear(hidden)
                 loss = (F.cross_entropy(hiddens_adv.view(hiddens_adv.shape[0], args.num_classes), labels) + F.cross_entropy(hiddens_clean.view(hiddens_clean.shape[0], args.num_classes), labels)) / 2

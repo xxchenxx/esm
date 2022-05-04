@@ -82,8 +82,6 @@ def PGD_regression(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), 
 
         out = model(x_adv)
         loss_adv0 = torch.nn.functional.mse_loss(out.view(out.shape[0], 1), labels)
-        print(loss_adv0)
-        # loss_adv0 = torch.mean(out)
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         x_adv.data.add_(gamma * torch.sign(grad0.data))
 
@@ -108,7 +106,6 @@ def PGD_regression_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/
 
         out = model(x_adv)
         loss_adv0 = torch.nn.functional.mse_loss(out.view(out.shape[0], 1), labels)
-        # loss_adv0 = torch.mean(out)
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
         index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
