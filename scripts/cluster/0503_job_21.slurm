@@ -16,4 +16,4 @@ source /home1/08090/tlc619/.bashrc
 conda activate gcn
 cd /work2/08090/tlc619/frontera/esm
 git pull
-python -u finetune_sup_head_dsee_parallel.py esm1b_t33_650M_UR50S data/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2 --split_file S_target_clasification.pkl --adv --gamma 1e-2 --steps 2 > 0503_job_20.out
+python -u finetune_sup_head_dsee_parallel.py esm1b_t33_650M_UR50S data/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2 --split_file S_target_classification.pkl --adv --gamma 1e-2 --steps 2 > 0503_job_20.out
