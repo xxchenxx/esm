@@ -202,8 +202,10 @@ def main(args):
                         tars = torch.cat(tars, 0)
                         print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
                         acc = (outputs == tars).float().sum() / tars.nelement()
+                        precision = ((outputs == tars).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum()
+                        print("PRECISION:", precision)
                         if acc > best:
-                            torch.save(linear.state_dict(), f"linear-supervised-finetuned-{args.idx}.pt")
+                            torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                             best = acc
         lr_scheduler.step()
         model.eval()
@@ -234,6 +236,8 @@ def main(args):
             tars = torch.cat(tars, 0)
             print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
             acc = (outputs == tars).float().sum() / tars.nelement()
+            precision = ((outputs == tars).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum()
+            print("PRECISION:", precision)
             if acc > best:
                 torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                 best = acc
