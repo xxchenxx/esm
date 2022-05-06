@@ -96,7 +96,8 @@ def create_parser():
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--lr-factor", type=int, default=10)
     parser.add_argument("--sparse", type=int, default=64)
-
+    parser.add_argument("--steps", type=int, default=1)
+    parser.add_argument("--gamma", type=float, default=1e-3)
     return parser
 
 def pruning_model(model, px):
@@ -255,12 +256,12 @@ def main(args):
                 loss = F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_a) * lam + \
                     F.mse_loss(hiddens.view(hiddens.shape[0], 1) * 10, labels_all_b) * (1 - lam)
             elif args.adv:
-                hidden_adv = PGD_regression(hidden, linear, labels, steps=1, eps=3/255, num_classes=1, gamma=0.001)
+                hidden_adv = PGD_regression(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=1, gamma=args.gamma)
                 hiddens_adv = linear(hidden_adv)
                 hiddens_clean = linear(hidden)
                 loss = (F.mse_loss(hiddens_adv.view(hiddens_adv.shape[0], 1), labels) + F.mse_loss(hiddens_clean.view(hiddens_clean.shape[0], 1), labels)) / 2
             elif args.aadv:
-                hidden_adv = PGD_regression_amino(hidden, linear, labels, steps=1, eps=3/255, num_classes=1, gamma=0.001)
+                hidden_adv = PGD_regression_amino(hidden, linear, labels, steps=args.steps, eps=3/255, num_classes=1, gamma=args.gamma)
                 hiddens_adv = linear(hidden_adv)
                 hiddens_clean = linear(hidden)
                 loss = (F.mse_loss(hiddens_adv.view(hiddens_adv.shape[0], 1), labels) + F.mse_loss(hiddens_clean.view(hiddens_clean.shape[0], 1), labels)) / 2
