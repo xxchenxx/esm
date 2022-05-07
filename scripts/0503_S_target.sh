@@ -71,9 +71,12 @@ CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_regression.py esm1b_t33
 CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head.py esm1b_t33_650M_UR50S data/datasets/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S_adv --lr 2e-2 --split_file S_target_classification.pkl --adv  > S_classification_adv.out &
 
 
+
+
 CUDA_VISIBLE_DEVICES=1 nohup python -u finetune_sup_head.py esm1b_t33_650M_UR50S data/datasets/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S_aadv --lr 2e-2 --split_file S_target_classification.pkl --aadv  > S_classification_aadv.out &
 
 
 CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_dsee.py esm1b_t33_650M_UR50S data/datasets/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx debug --lr 5e-3 --split_file S_target_classification.pkl --rank 8 --sparse 64 > r8_5e-3.out &
 
 CUDA_VISIBLE_DEVICES=0 nohup python -u finetune_sup_head_dsee.py esm1b_t33_650M_UR50S data/datasets/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx debug --lr 5e-3 --split_file S_target_classification.pkl --rank 16 --sparse 64 > r16_5e-3.out &
+

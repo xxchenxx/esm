@@ -33,5 +33,4 @@ nohup python -u finetune_sup_head_regression.py esm1b_t33_650M_UR50S data/d1_fas
 nohup python -u finetune_sup_head_classification_parallel.py esm1b_t33_650M_UR50S data/d1_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 2 --idx d1 --lr 2e-2 --split_file d1_0_classification.pkl &
 
 
-
 nohup python -u finetune_sup_head_regression_dsee_parallel.py esm1b_t33_650M_UR50S data/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 2 --idx d2 --lr 2e-2 --split_file d2_1.pkl > d2_1_S.out &

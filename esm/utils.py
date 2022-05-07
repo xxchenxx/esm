@@ -40,7 +40,7 @@ def PGD_classification(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/25
     return x_adv
 
 
-def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None):
+def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None, top=10):
     
     # Compute loss
     x_adv = x.clone().detach()
@@ -58,7 +58,7 @@ def PGD_classification_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps
         # loss_adv0 = torch.mean(out)
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
-        index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
+        index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:top]
         x_adv.data.index_add_(0, index, update[index])
 
         if clip:
@@ -91,7 +91,7 @@ def PGD_regression(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), 
     return x_adv
 
 
-def PGD_regression_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None):
+def PGD_regression_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/255), randinit=False, clip=False, num_classes=None, top=10):
     
     # Compute loss
     x_adv = x.clone().detach()
@@ -108,7 +108,7 @@ def PGD_regression_amino(x, model=None, labels=None, steps=1, gamma=0.1, eps=(1/
         loss_adv0 = torch.nn.functional.mse_loss(out.view(out.shape[0], 1), labels)
         grad0 = torch.autograd.grad(loss_adv0, x_adv, only_inputs=True)[0]
         update = gamma * torch.sign(grad0.data)
-        index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:10]
+        index = torch.randperm(x_adv.shape[0], device=x_adv.device)[:top]
         x_adv.data.index_add_(0, index, update[index])
 
         if clip:
