@@ -144,7 +144,7 @@ def main(args):
         model = model.cuda()
         print("Transferred model to GPU")
     import sys
-
+    step = 0
     train_set = PickleBatchedDataset.from_file(args.split_file, True, args.fasta_file)
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     train_data_loader = torch.utils.data.DataLoader(
@@ -236,7 +236,7 @@ def main(args):
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
-        
+            step += 1
             print(
                 f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
             )
@@ -279,8 +279,8 @@ def main(args):
             linear.zero_grad()
             print(loss.item())
 
-            if (batch_idx + 1) % 20000 == 0:
-                spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
+            if (step + 1) % 20000 == 0:
+                spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
                 if spearman > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
                     best = spearman
@@ -288,14 +288,14 @@ def main(args):
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
+        spearman = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
         if spearman > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-regression-{args.idx}.pt")
             best = spearman
 
     print(best)
 
-def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step):
     with torch.no_grad():
         outputs = []
         tars = []
@@ -323,6 +323,8 @@ def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
         pearson = pearsonr(outputs, tars)[0]
         print("PEAR EVALUATION:", pearson)
         #acc = (outputs == tars).float().sum() / tars.nelement()
+        wandb.log({"spearman": spearman}, step=step)
+        wandb.log({"pearson": pearson}, step=step)
         return spearman
 
 if __name__ == "__main__":

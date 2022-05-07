@@ -221,10 +221,11 @@ def main(args):
     optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / args.lr_factor, weight_decay=5e-2)
     lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / args.lr_factor, steps_per_epoch=1, epochs=int(20))
-
+    step = 0
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
+            step += 1
             print(
                 f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
             )
@@ -267,9 +268,9 @@ def main(args):
             model.zero_grad()
             print(loss.item())
 
-            if (batch_idx + 1) % 20000 == 0:
+            if (step + 1) % 20000 == 0:
                 model.eval()
-                acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
+                acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
                 if acc > best:
                     torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
                     best = acc
@@ -277,13 +278,13 @@ def main(args):
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
-        acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts)
+        acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
         if acc > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
             best = acc
     print(best)
 
-def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
+def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step):
     with torch.no_grad():
         outputs = []
         tars = []
@@ -308,6 +309,7 @@ def evaluate(model, linear, test_data_loader, repr_layers, return_contacts):
         tars = torch.cat(tars, 0)
         print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
         acc = (outputs == tars).float().sum() / tars.nelement()
+        wandb.log({"accuracy": float(acc)}, step=step)
         return acc
 
 if __name__ == "__main__":

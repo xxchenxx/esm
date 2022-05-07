@@ -164,10 +164,12 @@ def main(args):
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, 1)).cuda()
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
+    step = 0
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
+                step += 1
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
                 )
@@ -208,7 +210,7 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-            if (batch_idx + 1) % 20000 == 0:
+            if (step + 1) % 20000 == 0:
                 with torch.no_grad():
                     outputs = []
                     tars = []
@@ -239,6 +241,8 @@ def main(args):
                     pearson = pearsonr(outputs, tars)[0]
                     print("PEAR EVALUATION:", pearson)
                     #acc = (outputs == tars).float().sum() / tars.nelement()
+                    wandb.log({"spearman": spearman}, step=step)
+                    wandb.log({"pearson": pearson}, step=step)
                     if spearman > best:
                         torch.save(linear.state_dict(), f"regression-{args.idx}.pt")
                         best = spearman
@@ -274,6 +278,8 @@ def main(args):
             #acc = (outputs == tars).float().sum() / tars.nelement()
             pearson = pearsonr(outputs, tars)[0]
             print("PEAR EVALUATION:", pearson)
+            wandb.log({"spearman": spearman}, step=step)
+            wandb.log({"pearson": pearson}, step=step)
             if spearman > best:
                 torch.save(linear.state_dict(), f"head-regression-{args.idx}.pt")
                 best = spearman

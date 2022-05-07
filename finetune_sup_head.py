@@ -139,9 +139,11 @@ def main(args):
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
+    step = 0
     for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
+            step += 1
             with torch.autograd.set_detect_anomaly(True):
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
@@ -182,7 +184,7 @@ def main(args):
                 optimizer.step()
                 linear.zero_grad()
                 print(loss.item())
-                if (batch_idx + 1) % 20000 == 0:
+                if (step + 1) % 20000 == 0:
                     with torch.no_grad():
                         outputs = []
                         tars = []
@@ -207,6 +209,8 @@ def main(args):
                         acc = (outputs == tars).float().sum() / tars.nelement()
                         precision = ((outputs == tars).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum()
                         print("PRECISION:", precision)
+                        wandb.log({"accuracy": acc}, step=step)
+                        wandb.log({"precision": precision}, step=step)
                         if acc > best:
                             torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                             best = acc
@@ -241,6 +245,8 @@ def main(args):
             acc = (outputs == tars).float().sum() / tars.nelement()
             precision = ((outputs == tars).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum()
             print("PRECISION:", precision)
+            wandb.log({"accuracy": acc}, step=step)
+            wandb.log({"precision": precision}, step=step)
             if acc > best:
                 torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                 best = acc
