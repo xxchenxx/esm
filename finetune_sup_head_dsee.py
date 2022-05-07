@@ -14,6 +14,7 @@ import torch.nn.utils.prune as prune
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import wandb
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer, SparseMultiheadAttention
 from tqdm import tqdm
@@ -97,6 +98,7 @@ def create_parser():
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--steps", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=1e-3)
+    parser.add_argument("--wandb-name", type=str, default='protein')
     return parser
 
 def pruning_model(model, px):
@@ -132,6 +134,8 @@ def set_seed(args):
 def main(args):
 
     set_seed(args)
+    wandb.init(project=f"protein", entity="xxchen", name=args.wandb_name)
+    wandb.config.update(vars(args))
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
     model.eval()

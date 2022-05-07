@@ -14,6 +14,7 @@ import torch.nn.utils.prune as prune
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import wandb
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
 from esm.utils import PGD_classification, PGD_classification_amino
@@ -93,7 +94,7 @@ def create_parser():
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--rank", type=int, default=4)
     parser.add_argument("--batch_size", type=int, default=4)
-
+    parser.add_argument("--wandb-name", type=str, default="protein")
     return parser
 
 
@@ -110,6 +111,8 @@ def main(args):
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise, rank=args.rank)
     model.eval()
+    wandb.init(project=f"protein", entity="xxchen", name=args.wandb_name)
+    wandb.config.update(vars(args))
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
         print("Transferred model to GPU")

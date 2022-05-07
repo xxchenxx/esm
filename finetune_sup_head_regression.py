@@ -19,6 +19,7 @@ from esm.modules import TransformerLayer
 
 from scipy.stats import spearmanr, pearsonr
 from esm.utils import PGD_regression, PGD_regression_amino
+import wandb
 def create_parser():
     parser = argparse.ArgumentParser(
         description="Extract per-token representations and model outputs for sequences in a FASTA file"  # noqa
@@ -91,6 +92,7 @@ def create_parser():
     parser.add_argument("--noise", action="store_true")
     parser.add_argument("--adv", action="store_true")
     parser.add_argument("--aadv", action="store_true")
+    parser.add_argument("--wandb-name", type=str, default='protein')
     return parser
 
 def pruning_model(model, px):
@@ -126,6 +128,8 @@ def set_seed(args):
 def main(args):
 
     set_seed(args)
+    wandb.init(project=f"protein", entity="xxchen", name=args.wandb_name)
+    wandb.config.update(vars(args))
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise)
     model.eval()
