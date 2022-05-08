@@ -112,6 +112,7 @@ class SparseMultiheadAttention(nn.Module):
         )
         self.v_proj_sparse = nn.Linear(self.vdim, embed_dim, bias=False)
         self.q_proj_sparse = nn.Linear(embed_dim, embed_dim, bias=False)
+
         self.v_proj = nn.Linear(self.vdim, embed_dim, bias=bias)
         self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.q_proj_adapter = nn.Sequential(
