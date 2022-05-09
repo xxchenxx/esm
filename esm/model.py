@@ -115,8 +115,8 @@ class ProteinBertModel(nn.Module):
             output_dim=self.alphabet_size,
             weight=self.embed_tokens.weight,
         )
-        self.temp_head = nn.Linear(self.args.embed_dim, 1)
-        self.classification_head = nn.Linear(self.args.embed_dim, self.num_classes)
+        # self.temp_head = nn.Linear(self.args.embed_dim, 1)
+        # self.classification_head = nn.Linear(self.args.embed_dim, self.num_classes)
 
     def _init_submodules_esm1(self):
         self._init_submodules_common()
@@ -203,14 +203,14 @@ class ProteinBertModel(nn.Module):
 
                 hidden.append(hiddens[i][mask].mean(0))
             hidden = torch.stack(hidden)
-            temp = self.temp_head(hidden)
-            cls_logits = self.classification_head(hidden)
+            # temp = self.temp_head(hidden)
+            # cls_logits = self.classification_head(hidden)
         else:
             temp = None
             cls_logits = None
             hidden = None
     
-        result = {"logits": x, "representations": hidden_representations, "temp": temp, "cls_logits": cls_logits, "hidden": hidden}
+        result = {"logits": x, "representations": hidden_representations, "temp": None, "cls_logits": None, "hidden": hidden}
         if need_head_weights:
             # attentions: B x L x H x T x T
             attentions = torch.stack(attn_weights, 1)
