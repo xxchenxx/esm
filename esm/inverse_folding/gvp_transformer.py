@@ -29,7 +29,7 @@ class GVPTransformerModel(nn.Module):
     sequence-to-sequence Transformer encoder and decoder.
     """
 
-    def __init__(self, args, alphabet):
+    def __init__(self, args, alphabet, num_classes, **kwargs):
         super().__init__()
         encoder_embed_tokens = self.build_embedding(
             args, alphabet, args.encoder_embed_dim,
