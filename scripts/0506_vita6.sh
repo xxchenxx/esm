@@ -1,0 +1,3 @@
+CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_regression_dsee.py esm1b_t33_650M_UR50S data/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx debug --lr 1e-2 --lr-factor 10 --split_file S_target.pkl --rank 4 --lr-factor 10 > S_r4_reg.out &
+
+CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_regression_dsee.py esm1b_t33_650M_UR50S data/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx debug --lr 1e-2 --lr-factor 10 --split_file S_target.pkl --rank 8 --lr-factor 10 > S_r8_reg.out &
