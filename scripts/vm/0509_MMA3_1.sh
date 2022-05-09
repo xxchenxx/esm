@@ -1,0 +1,7 @@
+CUDA_VISIBLE_DEVICES=4 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 1 --wandb-name 0509_S_classification_sap_seed1_GPU4 > 0509_S_classification_sap_seed1_GPU4.out &
+
+CUDA_VISIBLE_DEVICES=5 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 2 --wandb-name 0509_S_classification_sap_seed2_GPU5 > 0509_S_classification_sap_seed2_GPU5.out &
+
+CUDA_VISIBLE_DEVICES=6 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 3 --wandb-name 0509_S_classification_sap_seed3_GPU6 > 0509_S_classification_sap_seed3_GPU6.out &
+
+CUDA_VISIBLE_DEVICES=7 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 2e-2  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 4 --wandb-name 0509_S_classification_sap_seed4_GPU7 > 0509_S_classification_sap_seed4_GPU7.out &
