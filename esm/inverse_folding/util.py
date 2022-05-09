@@ -252,6 +252,10 @@ class CoordBatchConverter(BatchConverter):
             coords = coords.to(device)
             confidence = confidence.to(device)
             tokens = tokens.to(device)
+        else:
+            coords = coords.cuda()
+            confidence = confidence.cuda()
+            tokens = tokens.cuda()
         padding_mask = torch.isnan(coords[:,:,0,0])
         coord_mask = torch.isfinite(coords.sum(-2).sum(-1))
         confidence = confidence * coord_mask + (-1.) * padding_mask
