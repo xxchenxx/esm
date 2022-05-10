@@ -18,10 +18,11 @@ for epoch in range(4):
     for name, label in zip(split['train_names'], split['train_labels']):
         fpath = f"d1/d1_clean/{name}/unrelaxed_model_1_ptm.pdb"
         # print(fpath)
-        structure = esm.inverse_folding.util.load_structure(fpath, 'A')
-        coords, native_seq = esm.inverse_folding.util.extract_coords_from_structure(structure)
-        coords = torch.from_numpy(coords).cuda()
-        rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)
+        with torch.no_grad():
+            structure = esm.inverse_folding.util.load_structure(fpath, 'A')
+            coords, native_seq = esm.inverse_folding.util.extract_coords_from_structure(structure)
+            coords = torch.from_numpy(coords).cuda()
+            rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)
         # print(rep.shape)
         output = linear(rep.mean(0, keepdim=True))
         outputs.append(output)
@@ -48,17 +49,17 @@ for epoch in range(4):
         outputs = []
         labels = []
     lr_scheduler.step()
-    for name, label in zip(split['train_names'], split['train_labels']):
-        fpath = f"d1/d1_clean/{name}/unrelaxed_model_1_ptm.pdb"
-        # print(fpath)
-        structure = esm.inverse_folding.util.load_structure(fpath, 'A')
-        coords, native_seq = esm.inverse_folding.util.extract_coords_from_structure(structure)
-        rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)
+    with torch.no_grad():
+        for name, label in zip(split['test_names'], split['test_labels']):
+            fpath = f"d1/d1_clean/{name}/unrelaxed_model_1_ptm.pdb"
+            structure = esm.inverse_folding.util.load_structure(fpath, 'A')
+            coords, native_seq = esm.inverse_folding.util.extract_coords_from_structure(structure)
+            rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)
 
-        output = linear(rep.unsqueeze(-1))
-        outputs.append(output)
-        labels.append(label.long())
-    
+            output = linear(rep.mean(0, keepdim=True))
+            outputs.append(torch.argmax(output, 1))
+            labels.append(torch.tensor(label).long().cuda())
+
     outputs = torch.cat(outputs, 0)
     labels = torch.stack(labels, 0)
     acc = (outputs == labels).float().sum() / labels.nelement()
