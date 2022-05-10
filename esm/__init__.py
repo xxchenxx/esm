@@ -8,4 +8,4 @@ from .version import version as __version__  # noqa
 from .data import *  # noqa
 from .model import ProteinBertModel, MSATransformer  # noqa
 from . import pretrained  # noqa
-from . import inverse_folding # noqa
+# from . import inverse_folding # noqa
