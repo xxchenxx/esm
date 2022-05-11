@@ -140,7 +140,10 @@ def main(args):
     wandb.config.update(vars(args))
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
-    model.load_state_dict(torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict'])
+    state_dict = torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict']
+    model_state_dict = model.state_dict()
+    model_state_dict.update(state_dict)
+    model.load_state_dict(model_state_dict)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
