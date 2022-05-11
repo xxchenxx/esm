@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES=4 nohup python -u finetune_sup_head_regression_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target.pkl --seed 1 --wandb-name 0510_S_regression_sap_seed1_GPU4_epoch6_1e-3 > 0510_S_regression_sap_seed1_epoch6_1e-3_GPU4.out &
+
+CUDA_VISIBLE_DEVICES=5 nohup python -u finetune_sup_head_regression_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target.pkl --seed 2 --wandb-name 0510_S_regression_sap_seed2_GPU5_epoch6_1e-3 > 0510_S_regression_sap_seed2_epoch6_1e-3_GPU5.out &
+
+CUDA_VISIBLE_DEVICES=6 nohup python -u finetune_sup_head_regression_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target.pkl --seed 3 --wandb-name 0510_S_regression_sap_seed3_GPU6_epoch6_1e-3 > 0510_S_regression_sap_seed3_epoch6_1e-3_GPU6.out &
+
+CUDA_VISIBLE_DEVICES=1 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 1 --wandb-name 0510_S_classification_sap_seed1_GPU1_epoch6_1e-3 > 0510_S_classification_sap_seed1_epoch6_1e-3_GPU1.out &
+
+CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 2 --wandb-name 0510_S_classification_sap_seed2_GPU2_epoch6_1e-3 > 0510_S_classification_sap_seed2_epoch6_1e-3_GPU2.out &
+
+CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_sap.py esm1b_t33_650M_UR50S ~/clean_datasets/S/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3  --split_file ~/clean_datasets/S/S_target_classification.pkl --seed 3 --wandb-name 0510_S_classification_sap_seed3_GPU3_epoch6_1e-3 > 0510_S_classification_sap_seed3_epoch6_1e-3_GPU3.out &

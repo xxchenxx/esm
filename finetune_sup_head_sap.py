@@ -112,7 +112,7 @@ def main(args):
     set_seed(args)
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise, rank=args.rank)
-    model.load_state_dict(torch.load("checkpoint_sequencemoco.pt", map_location='cpu')['state_dict'])
+    model.load_state_dict(torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict'])
     model.eval()
     wandb.init(project=f"protein", entity="xxchen", name=args.wandb_name)
     wandb.config.update(vars(args))
@@ -143,7 +143,7 @@ def main(args):
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     step = 0
-    for epoch in range(4):
+    for epoch in range(6):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             step += 1
