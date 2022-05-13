@@ -142,7 +142,7 @@ def main(args):
     optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     step = 0
-    for epoch in range(4):
+    for epoch in range(6):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             step += 1
