@@ -1,0 +1,3 @@
+for i in $(seq 0 9); do
+CUDA_VISIBLE_DEVICES=7 nohup python -u finetune_sup_head_dsee.py esm1b_t33_650M_UR50S ~/clean_datasets/d1/d1_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 2 --idx d1 --lr 1e-2 --lr-factor 10 --split_file ~/clean_datasets/d1/d1_${i}_classification.pkl --seed 1 --wandb-name 0514_d1_${i}_adv_1e-5_seed1_GPU7 --adv --gamma 1e-5 --epochs 6  > 0514_d1_${i}_adv_1e-5_seed1_GPU7.out
+done
