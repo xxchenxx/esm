@@ -46,3 +46,24 @@ done
 for i in $(seq 0 7); do
 CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_full.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx d2 --lr 1e-2 --lr-factor 10 --split_file d2/d2_${i}_classification.pkl --seed 1 --wandb-name 0516_d2_${i}_seed2_ep10_full_GPU${i} --epochs 10  > 0516_d2_${i}_seed2_ep10_full_GPU${i}.out 
 done
+
+for i in $(seq 8 9); do
+CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_regression_full.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx d2 --lr 1e-2 --lr-factor 10 --split_file d2/d2_${i}.pkl --seed 1 --wandb-name 0516_d2_${i}_r_seed2_ep10_full_GPU${i} --epochs 10  > 0516_d2_${i}_r_seed2_ep10_full_GPU${i}.out 
+done
+
+for i in $(seq 8 9); do
+CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_full.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx d2 --lr 1e-2 --lr-factor 10 --split_file d2/d2_${i}_classification.pkl --seed 1 --wandb-name 0516_d2_${i}_seed2_ep10_full_GPU${i} --epochs 10  > 0516_d2_${i}_seed2_ep10_full_GPU${i}.out 
+done
+
+
+for i in $(seq 0 9); do
+CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_dsee.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx d2 --lr 1e-2 --lr-factor 10 --split_file d2/d2_${i}_classification.pkl --wandb-name 0516_d2_${i}_seed2_ep4_dsee_GPU${i} > 0516_d2_${i}_seed2_ep4_dsee_GPU${i}.out 
+done
+
+
+for i in $(seq 0 9); do
+CUDA_VISIBLE_DEVICES=2 nohup python -u finetune_sup_head_regression_dsee.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx d2 --lr 1e-2 --lr-factor 10 --split_file d2/d2_${i}.pkl --wandb-name 0516_d2_${i} --rank 4 _r_seed2_ep4_dsee_GPU${i} > 0516_d2_${i}_r_seed2_ep4_dsee_GPU${i}.out 
+done
+
+
+CUDA_VISIBLE_DEVICES=3 nohup python -u finetune_sup_head_regression_dsee.py esm1b_t33_650M_UR50S d2/d2_fasta_clean sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx debug --lr 1e-2 --lr-factor 10 --split_file d2/d2_0.pkl --rank 4 > 0516_d2_0_r_seed2_ep4_dsee_GPU0.out 
