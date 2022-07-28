@@ -98,6 +98,8 @@ def create_parser():
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--steps", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=1e-3)
+    parser.add_argument("--mix-alpha", type=float, default=0.2)
+    parser.add_argument("--mix-beta", type=float, default=0.2)
     parser.add_argument("--wandb-name", type=str, default='protein')
     return parser
 
@@ -243,7 +245,7 @@ def main(args):
 
             labels = torch.tensor(labels).cuda().long()
             if args.mix:
-                lam = np.random.beta(0.2, 0.2)
+                lam = np.random.beta(args.mix_alpha, args.mix_beta)
                 rand_index = torch.randperm(hidden.size()[0]).cuda()
                 labels_all_a = labels
                 labels_all_b = labels[rand_index]
