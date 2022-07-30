@@ -200,7 +200,7 @@ class ProteinBertModel(nn.Module):
             hidden = []
             for i in range(hiddens.shape[0]):
                 mask = tokens[i] >= 2
-
+                # print(hiddens[i][mask].shape)
                 hidden.append(hiddens[i][mask].mean(0))
             hidden = torch.stack(hidden)
             # temp = self.temp_head(hidden)

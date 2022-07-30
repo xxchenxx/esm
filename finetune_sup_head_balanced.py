@@ -183,9 +183,7 @@ def main(args):
                 else:
                     hiddens = linear(hidden)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
-                # l2_norm = sum(torch.sum(p**2) for p in linear.parameters())
-                l1_norm = sum(torch.sum(p.abs()) for p in linear.parameters())
-                loss = loss + 0.05 * l1_norm
+
                 loss.backward()
                 optimizer.step()
                 linear.zero_grad()
@@ -217,6 +215,12 @@ def main(args):
                         print("PRECISION:", precision)
                         wandb.log({"accuracy": acc}, step=step)
                         wandb.log({"precision": precision}, step=step)
+
+                        per_class_accuracy = []
+                        for i in range(args.num_classes):
+                            mask = (tars == i)
+                            per_class_accuracy.append(float((outputs[mask] == tars[mask]).float().sum() / tars[mask].nelement()))
+                        print("Per class:", per_class_accuracy)
                         if acc > best:
                             torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                             best = acc
@@ -253,6 +257,11 @@ def main(args):
             print("PRECISION:", precision)
             wandb.log({"accuracy": acc}, step=step)
             wandb.log({"precision": precision}, step=step)
+            per_class_accuracy = []
+            for i in range(args.num_classes):
+                mask = (tars == i)
+                per_class_accuracy.append(float((outputs[mask] == tars[mask]).float().sum() / tars[mask].nelement()))
+            print("Per class:", per_class_accuracy)
             if acc > best:
                 torch.save(linear.state_dict(), f"head-classification-{args.idx}.pt")
                 best = acc
