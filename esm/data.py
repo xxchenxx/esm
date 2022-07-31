@@ -33,9 +33,8 @@ class FastaBatchedDataset(object):
                 return
 
             strs = "".join(buf)
-            if len(strs) <= 800:
-                sequence_labels.append(cur_seq_label)
-                sequence_strs.append(strs)
+            sequence_labels.append(cur_seq_label)
+            sequence_strs.append(strs)
             cur_seq_label = None
             buf = []
 

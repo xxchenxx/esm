@@ -320,6 +320,13 @@ def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step
         print("PRECISION:", precision)
         wandb.log({"accuracy": float(acc)}, step=step)
         wandb.log({"precision": float(precision)}, step=step)
+        per_class_accuracy = []
+        for i in range(args.num_classes):
+            mask = (tars == i)
+            per_class_accuracy.append(float((outputs[mask] == tars[mask]).float().sum() / tars[mask].nelement()))
+        print("Per class:", per_class_accuracy)
+        for i in range(args.num_classes):
+            wandb.log({f"accuracy_{i}": per_class_accuracy[i]}, step=step)
         return acc
 
 if __name__ == "__main__":
