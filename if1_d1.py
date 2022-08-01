@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import sys
 split = sys.argv[1]
-split = pickle.load(open(f"d1_{split}_classification.pkl", "rb"))
+split = pickle.load(open(f"d1/d1_{split}_classification.pkl", "rb"))
 model, alphabet = esm.pretrained.esm_if1_gvp4_t16_142M_UR50()
 model = model.cuda()
 linear = nn.Sequential( nn.Linear(512, 128), nn.LayerNorm(128), nn.ReLU(), nn.Linear(128, 2)).cuda() 
@@ -64,5 +64,8 @@ for epoch in range(4):
     labels = torch.stack(labels, 0)
     acc = (outputs == labels).float().sum() / labels.nelement()
     precision = ((outputs == labels).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum() 
+    for i in range(2):
+        poutputs = outputs[labels == i]
+        print((poutputs == i).float().mean())
     print(acc)
     print(precision)
