@@ -156,8 +156,7 @@ def main(args):
                 toks = toks.cuda()
                 if args.truncate:
                     toks = toks[:, :1022]
-                with torch.no_grad():
-                    out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
                 hidden = out['hidden']
 
@@ -191,8 +190,12 @@ def main(args):
                 loss = loss + 0.05 * l1_norm
                 loss.backward()
                 for name, m in model.named_parameters():
-                    print(name)
-                assert False
+                    if name.startswith("layers."):
+                        idx = int(name.split(".")[1])
+                        if idx < 32 - 16 + 1:
+                            m.grad.data.zero_()
+                    elif name.startswith("emb"):
+                        m.grad.data.zero_()
                 optimizer_2.step()
                 optimizer.step()
                 linear.zero_grad()
