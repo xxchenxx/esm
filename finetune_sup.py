@@ -203,7 +203,8 @@ def main(args):
                 if args.truncate:
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                logits = out['cls_logits']
+                hidden = out['hidden']
+                logits = linear(hidden)
                 labels = torch.tensor(labels).cuda().long()
                 outputs.append(torch.argmax(logits.reshape(-1, args.num_classes), 1).view(-1))
                 tars.append(labels.reshape(-1))
