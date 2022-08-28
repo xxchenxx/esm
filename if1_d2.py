@@ -64,5 +64,8 @@ for epoch in range(4):
     labels = torch.stack(labels, 0)
     acc = (outputs == labels).float().sum() / labels.nelement()
     precision = ((outputs == labels).float() * (outputs == 1).float()).sum() / (outputs == 1).float().sum() 
+    for i in range(5):
+        poutputs = outputs[labels == i]
+        print((poutputs == i).float().mean())
     print(acc)
     print(precision)

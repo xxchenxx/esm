@@ -4,6 +4,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+
+"""
+command:
+CUDA_VISIBLE_DEVICES=1 python -u load.py esm1b_t33_650M_UR50S data/S_target sup --include mean per_tok --toks_per_batch 2048 --num_classes 5 --idx S --lr 1e-3 --rank 16 --lr-factor 10 --split_file S_target_classification.pkl --seed 1 --wandb-name 0512_S_adv_1e-6_seed1_GPU1_sap --adv --gamma 1e-6 
+
+"""
+
 import argparse
 import pathlib
 import random
@@ -98,8 +105,6 @@ def create_parser():
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--steps", type=int, default=1)
     parser.add_argument("--gamma", type=float, default=1e-3)
-    parser.add_argument("--mix-alpha", type=float, default=0.2)
-    parser.add_argument("--mix-beta", type=float, default=0.2)
     parser.add_argument("--wandb-name", type=str, default='protein')
     return parser
 
@@ -140,10 +145,10 @@ def main(args):
     wandb.config.update(vars(args))
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
-    state_dict = torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict']
-    model_state_dict = model.state_dict()
-    model_state_dict.update(state_dict)
-    model.load_state_dict(model_state_dict)
+    # state_dict = torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict']
+    # model_state_dict = model.state_dict()
+    # model_state_dict.update(state_dict)
+    # model.load_state_dict(model_state_dict)
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
@@ -178,57 +183,21 @@ def main(args):
     
     for name, p in model.named_parameters():
         print(name, p.requires_grad)
+    
+    state_dict = torch.load("S_FST_ADV_SAP.pt")
+    model_state_dict = state_dict['model']
+    linear.load_state_dict(state_dict['linear'])
     for name, m in model.named_modules():
         if isinstance(m, SparseMultiheadAttention):
-            Q_weight = m.q_proj.weight
-            V_weight = m.v_proj.weight
-            Q_weight = Q_weight.detach().cpu()
-            V_weight = V_weight.detach().cpu()
-            U_Q = torch.randn((Q_weight.shape[0], 1)).to(Q_weight.device)
-            V_Q = torch.randn((1, Q_weight.shape[1])).to(Q_weight.device)
-            S_Q = torch.zeros_like(Q_weight)
-
-            U_V = torch.randn((V_weight.shape[0], 1)).to(V_weight.device)
-            V_V = torch.randn((1, V_weight.shape[1])).to(V_weight.device)
-            S_V = torch.zeros_like(V_weight)
-            last_S_Q = torch.zeros_like(Q_weight)
-
-            for rank in tqdm(range(20)):
-                S_Q = torch.zeros_like(Q_weight)
-                S_V = torch.zeros_like(Q_weight)
-                for _ in range(10):
-                    U_Q = torch.qr((Q_weight - S_Q) @ V_Q.T)[0]
-                    V_Q = U_Q.T @ (Q_weight - S_Q)
-                    S_Q = Q_weight - U_Q @ V_Q
-                    q = 0.01
-                    S_Q[S_Q.abs() < q] = 0
-                    U_V = torch.qr((V_weight - S_V) @ V_V.T)[0]
-                    V_V = U_V.T @ (V_weight - S_V)
-                    S_V = V_weight - U_V @ V_V
-                    S_V[S_V.abs() < q] = 0
-
-                E_Q = Q_weight - U_Q @ V_Q - S_Q
-                E_V = V_weight - U_V @ V_V - S_V
-                
-                E_Q_vector = torch.qr(E_Q)[1][:1]
-                E_V_vector = torch.qr(E_V)[1][:1]
-                
-                V_Q = torch.cat([V_Q, E_Q_vector], 0)
-                V_V = torch.cat([V_V, E_V_vector], 0)
-            
-            q, _ = torch.kthvalue(S_Q.abs().view(-1), S_Q.numel() - args.sparse)
-            S_Q = (S_Q.abs() >= q).float()
-            #print(S_Q)
-            v, _ = torch.kthvalue(S_V.abs().view(-1), S_V.numel() - args.sparse)
-            S_V = (S_V.abs() >= v).float()
-            prune.custom_from_mask(m.q_proj_sparse, 'weight', S_Q.to(m.q_proj.weight.device))
-            prune.custom_from_mask(m.v_proj_sparse, 'weight', S_V.to(m.v_proj.weight.device))
+            prune.custom_from_mask(m.q_proj_sparse, 'weight', model_state_dict[name + ".q_proj_sparse.weight_mask"].to(m.q_proj.weight.device))
+            prune.custom_from_mask(m.v_proj_sparse, 'weight', model_state_dict[name + ".v_proj_sparse.weight_mask"].to(m.v_proj.weight.device))
+    model.load_state_dict(model_state_dict)
     optimizer1 = torch.optim.AdamW(linear.parameters(), lr=args.lr, weight_decay=5e-2)
     optimizer2 = torch.optim.AdamW(model.parameters(), lr=args.lr / args.lr_factor, weight_decay=5e-2)
     lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / args.lr_factor, steps_per_epoch=1, epochs=int(20))
     step = 0
-    for epoch in range(6):
+    for epoch in range(0):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             step += 1
@@ -238,14 +207,14 @@ def main(args):
             toks = toks.cuda()
             if args.truncate:
                 toks = toks[:, :1022]
-            
-            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+            with torch.no_grad():
+                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
             hidden = out['hidden']
 
             labels = torch.tensor(labels).cuda().long()
             if args.mix:
-                lam = np.random.beta(args.mix_alpha, args.mix_beta)
+                lam = np.random.beta(0.2, 0.2)
                 rand_index = torch.randperm(hidden.size()[0]).cuda()
                 labels_all_a = labels
                 labels_all_b = labels[rand_index]
@@ -289,7 +258,7 @@ def main(args):
         if acc > best:
             torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
             best = acc
-    print(best)
+    acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
 
 def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step):
     with torch.no_grad():
@@ -320,13 +289,8 @@ def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step
         print("PRECISION:", precision)
         wandb.log({"accuracy": float(acc)}, step=step)
         wandb.log({"precision": float(precision)}, step=step)
-        per_class_accuracy = []
-        for i in range(args.num_classes):
-            mask = (tars == i)
-            per_class_accuracy.append(float((outputs[mask] == tars[mask]).float().sum() / tars[mask].nelement()))
-        print("Per class:", per_class_accuracy)
-        for i in range(args.num_classes):
-            wandb.log({f"accuracy_{i}": per_class_accuracy[i]}, step=step)
+        for i in range(5):
+            print((outputs[tars == i] == i).float().mean())
         return acc
 
 if __name__ == "__main__":
