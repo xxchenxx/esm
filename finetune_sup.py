@@ -75,6 +75,13 @@ def create_parser():
         "--lr",
         type=float,
         help="learning rates",
+        default=2e-2, 
+    )
+
+    parser.add_argument(
+        "--backbone-lr",
+        type=float,
+        help="learning rates",
         default=1e-6, 
     )
 
@@ -91,9 +98,9 @@ def pruning_model(model, px):
     print('start unstructured pruning for all conv layers')
     parameters_to_prune =[]
     for name, m in model.named_modules():
-        #if 'self_attn' in name and (not 'k' in name) and isinstance(m, nn.Linear):
-        #    print(f"Pruning {name}")
-        #    parameters_to_prune.append((m,'weight'))
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            print(f"Pruning {name}")
+            parameters_to_prune.append((m,'weight'))
         if isinstance(m, TransformerLayer):
             print(f"Pruning {name}.fc1")
             parameters_to_prune.append((m.fc1,'weight'))
@@ -153,9 +160,12 @@ def main(args):
         pruning_model(model, args.pruning_ratio)
 
     model = model.cuda()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
-    for epoch in range(20):
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.backbone_lr)
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.backbone_lr, steps_per_epoch=1, epochs=int(4))
+    linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
+    head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
+    head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
+    for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             with torch.autograd.set_detect_anomaly(True):
@@ -168,7 +178,8 @@ def main(args):
                     toks = toks[:, :1022]
                 out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
-                logits = out['cls_logits']
+                hidden = out['hidden']
+                logits = linear(hidden)
                 labels = torch.tensor(labels).cuda().long()
                 loss = (torch.nn.functional.cross_entropy(logits.reshape(-1, args.num_classes), labels.reshape(-1)))
                         
