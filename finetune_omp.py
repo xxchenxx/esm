@@ -91,11 +91,14 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
+    parser.add_argument("--output_name", type=str)
+
 
     return parser
 
 def pruning_model(model, px, method='omp'):
     
+
     print('start unstructured pruning for all conv layers')
     parameters_to_prune =[]
     for name, m in model.named_modules():
@@ -156,6 +159,9 @@ def main(args):
 
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
+    
+    if args.checkpoint is not None:
+        model.load_state_dict(torch.load(args.checkpoint))
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.backbone_lr)
@@ -164,10 +170,6 @@ def main(args):
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
     steps = 0
-    checkpoints = torch.load(args.checkpoint)
-    model.load_state_dict(checkpoints['model'])
-    linear.load_state_dict(checkpoints['linear'])
-    pruning_model(model, args.pruning_ratio, args.pruning_method)
     for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
@@ -191,36 +193,36 @@ def main(args):
                 optimizer.step()
                 model.zero_grad()
                 print(loss.item())
-            if steps % 10000 == 0:
-                model.eval()
-                with torch.no_grad():
-                    outputs = []
-                    tars = []
-                    for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
-                        print(
-                            f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
-                        )
-                        if torch.cuda.is_available() and not args.nogpu:
-                            toks = toks.to(device="cuda", non_blocking=True)
-                        # The model is trained on truncated sequences and passing longer ones in at
-                        # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
-                        if args.truncate:
-                            toks = toks[:, :1022]
-                        out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-                        hidden = out['hidden']
-                        logits = linear(hidden)
-                        labels = torch.tensor(labels).cuda().long()
-                        outputs.append(torch.argmax(logits.reshape(-1, args.num_classes), 1).view(-1))
-                        tars.append(labels.reshape(-1))
-                    import numpy as np
-                    outputs = torch.cat(outputs, 0)
-                    tars = torch.cat(tars, 0)
-                    print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
-                    acc = (outputs == tars).float().sum() / tars.nelement()
-                    if acc > best:
-                        best = acc
         lr_scheduler.step()
-        
+        if steps % 10000 == 0:
+            model.eval()
+            with torch.no_grad():
+                outputs = []
+                tars = []
+                for batch_idx, (labels, strs, toks) in enumerate(test_data_loader):
+                    print(
+                        f"Processing {batch_idx + 1} of {len(test_data_loader)} batches ({toks.size(0)} sequences)"
+                    )
+                    if torch.cuda.is_available() and not args.nogpu:
+                        toks = toks.to(device="cuda", non_blocking=True)
+                    # The model is trained on truncated sequences and passing longer ones in at
+                    # infernce will cause an error. See https://github.com/facebookresearch/esm/issues/21
+                    if args.truncate:
+                        toks = toks[:, :1022]
+                    out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+                    hidden = out['hidden']
+                    logits = linear(hidden)
+                    labels = torch.tensor(labels).cuda().long()
+                    outputs.append(torch.argmax(logits.reshape(-1, args.num_classes), 1).view(-1))
+                    tars.append(labels.reshape(-1))
+                import numpy as np
+                outputs = torch.cat(outputs, 0)
+                tars = torch.cat(tars, 0)
+                print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
+                acc = (outputs == tars).float().sum() / tars.nelement()
+                if acc > best:
+                    torch.save(model.state_dict(), f"{args.output_name}.pth.tar")
+                    best = acc
     print(best)
 
 if __name__ == "__main__":

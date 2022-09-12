@@ -108,10 +108,10 @@ class CSVBatchedDataset(object):
             line = seqs.iloc[line_idx]
             target = targets.iloc[line_idx]
             cur_seq_label = f"seqnum{line_idx:09d}"
-            if len(line) <= 800:
-                sequence_labels.append(cur_seq_label)
-                sequence_strs.append(line)
-                sequence_targets.append(target)
+            # if len(line) <= 800:
+            sequence_labels.append(cur_seq_label)
+            sequence_strs.append(line)
+            sequence_targets.append(target)
 
         return cls(sequence_labels, sequence_strs, sequence_targets)
 
