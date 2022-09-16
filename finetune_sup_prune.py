@@ -121,31 +121,6 @@ def pruning_model(model, px, method='omp'):
         amount=px,
     )
 
-def pruning_model(model, px, method='omp'):
-    
-    print('start unstructured pruning for all conv layers')
-    parameters_to_prune =[]
-    for name, m in model.named_modules():
-        if 'self_attn' in name and isinstance(m, nn.Linear):
-            print(f"Pruning {name}")
-            parameters_to_prune.append((m,'weight'))
-        if isinstance(m, TransformerLayer):
-            print(f"Pruning {name}.fc1")
-            parameters_to_prune.append((m.fc1,'weight'))
-            print(f"Pruning {name}.fc2")
-            parameters_to_prune.append((m.fc2,'weight'))
-
-    parameters_to_prune = tuple(parameters_to_prune)
-    if method == 'omp':
-        prune_method = prune.L1Unstructured
-    elif method == 'rp':
-        prune_method = prune.RandomUnstructured
-    prune.global_unstructured(
-        parameters_to_prune,
-        pruning_method=prune_method,
-        amount=px,
-    )
-
 def set_seed(args):
     torch.backends.cudnn.benchmark=False
     torch.backends.cudnn.deterministic=True
