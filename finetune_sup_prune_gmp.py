@@ -196,12 +196,26 @@ def main(args):
         model.load_state_dict(checkpoints['model'])
         linear.load_state_dict(checkpoints['linear'])
     import numpy as np
-    epoch_pruning_ratio = 1 - np.power(1 - args.pruning_ratio, 1.0 / (4 - 1))
-    print(epoch_pruning_ratio)
+    total_step = 4 * len(train_data_loader)
+    total_step_15_percent = int(total_step * 0.15)
+    total_step_50_percent = int(total_step * 0.50)
+
+    n = (total_step_50_percent - total_step_15_percent) / 100
+    accu = 1
     for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             steps += 1
+            
+            if (steps > total_step_15_percent) and (steps - total_step_15_percent) % n == 0 and (steps - total_step_15_percent) / 100 <= n:
+                sparsity_current = args.pruning_ratio - args.pruning_ratio * (1 - (steps - total_step_15_percent) / (n * 100)) ** 3
+                sparsity_last = args.pruning_ratio - args.pruning_ratio * (1 - (steps - total_step_15_percent - 100) / (n * 100)) ** 3
+                remaining_rate_current = 1 - sparsity_current
+                remaining_rate_last = 1 - sparsity_last
+                epoch_pruning_ratio = 1 - remaining_rate_current / remaining_rate_last
+                accu = accu * (1 - epoch_pruning_ratio)
+                print(f"REMAINING WEIGHTS: {accu}")
+                pruning_model(model, epoch_pruning_ratio, 'omp')
             with torch.autograd.set_detect_anomaly(True):
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
@@ -250,7 +264,7 @@ def main(args):
                     if acc > best:
                         best = acc
         lr_scheduler.step()
-        pruning_model(model, epoch_pruning_ratio, 'omp')
+        
     print(best)
 
 if __name__ == "__main__":

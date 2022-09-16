@@ -43,7 +43,7 @@ def load_structure(fpath, chain=None):
     issolvent = filter_solvent(structure)
     structure = structure[~issolvent]
     chains = get_chains(structure)
-    print(f'Found {len(chains)} chains:', chains, '\n')
+    # print(f'Found {len(chains)} chains:', chains, '\n')
     if len(chains) == 0:
         raise ValueError('No chains found in the input file.')
     if chain is None:
@@ -51,7 +51,7 @@ def load_structure(fpath, chain=None):
     if chain not in chains:
         raise ValueError(f'Chain {chain} not found in input file')
     structure = structure[structure.chain_id == chain]
-    print(f'Loaded chain {chain}\n')
+    # print(f'Loaded chain {chain}\n')
     return structure
 
 
