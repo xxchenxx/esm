@@ -157,10 +157,11 @@ class PickleBatchedDataset(object):
         if train:
             names = split_file['train_names']
             labels = split_file['train_labels']
+            
         else:
             names = split_file['test_names']
             labels = split_file['test_labels']
-
+        print(len(names))
         seqs = []
         for name in names:
             fasta_file_path = os.path.join(fasta_root, name + ".fasta")
