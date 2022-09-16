@@ -93,6 +93,8 @@ def create_parser():
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
     parser.add_argument("--batch_size", type=int, default=3)
 
+    parser.add_argument("--batch-size", type=int, default=3)
+
     return parser
 
 def pruning_model(model, px, method='omp'):
@@ -165,7 +167,7 @@ def main(args):
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
     steps = 0
-    if args.checkpoint is not None:
+    if args.checkpoint:
         checkpoints = torch.load(args.checkpoint)
         model.load_state_dict(checkpoints['model'])
         linear.load_state_dict(checkpoints['linear'])

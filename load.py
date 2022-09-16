@@ -145,10 +145,7 @@ def main(args):
     wandb.config.update(vars(args))
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, use_sparse=True, noise_aug=args.noise, rank=args.rank)
-    # state_dict = torch.load("checkpoint_3dmoco_lr1e-5.pt", map_location='cpu')['state_dict']
-    # model_state_dict = model.state_dict()
-    # model_state_dict.update(state_dict)
-    # model.load_state_dict(model_state_dict)
+
     model.eval()
     if torch.cuda.is_available() and not args.nogpu:
         model = model.cuda()
@@ -197,7 +194,7 @@ def main(args):
     lr_scheduler1 = torch.optim.lr_scheduler.OneCycleLR(optimizer1, max_lr=args.lr, steps_per_epoch=1, epochs=int(20))
     lr_scheduler2 = torch.optim.lr_scheduler.OneCycleLR(optimizer2, max_lr=args.lr / args.lr_factor, steps_per_epoch=1, epochs=int(20))
     step = 0
-    for epoch in range(0):
+    for epoch in range(4):
         model.eval()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             step += 1
@@ -207,8 +204,7 @@ def main(args):
             toks = toks.cuda()
             if args.truncate:
                 toks = toks[:, :1022]
-            with torch.no_grad():
-                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
 
             hidden = out['hidden']
 
@@ -247,19 +243,18 @@ def main(args):
             if (step + 1) % 20000 == 0:
                 model.eval()
                 acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
-                if acc > best:
-                    torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
-                    best = acc
 
         lr_scheduler1.step()
         lr_scheduler2.step()
         model.eval()
         acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
         if acc > best:
-            torch.save({'linear': linear.state_dict(), 'model': model.state_dict()}, f"head-dsee-classification-{args.idx}.pt")
             best = acc
     acc = evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step)
+    if acc > best:
+        best = acc
 
+    print(best)
 def evaluate(model, linear, test_data_loader, repr_layers, return_contacts, step):
     with torch.no_grad():
         outputs = []

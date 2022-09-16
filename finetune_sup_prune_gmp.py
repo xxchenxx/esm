@@ -91,15 +91,38 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
-    parser.add_argument("--output_name", type=str)
-    parser.add_argument("--eval_freq", type=int, default=10000)
 
+    parser.add_argument("--batch-size", type=int, default=3)
 
     return parser
 
 def pruning_model(model, px, method='omp'):
     
+    print('start unstructured pruning for all conv layers')
+    parameters_to_prune =[]
+    for name, m in model.named_modules():
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            print(f"Pruning {name}")
+            parameters_to_prune.append((m,'weight'))
+        if isinstance(m, TransformerLayer):
+            print(f"Pruning {name}.fc1")
+            parameters_to_prune.append((m.fc1,'weight'))
+            print(f"Pruning {name}.fc2")
+            parameters_to_prune.append((m.fc2,'weight'))
 
+    parameters_to_prune = tuple(parameters_to_prune)
+    if method == 'omp':
+        prune_method = prune.L1Unstructured
+    elif method == 'rp':
+        prune_method = prune.RandomUnstructured
+    prune.global_unstructured(
+        parameters_to_prune,
+        pruning_method=prune_method,
+        amount=px,
+    )
+
+def pruning_model(model, px, method='omp'):
+    
     print('start unstructured pruning for all conv layers')
     parameters_to_prune =[]
     for name, m in model.named_modules():
@@ -145,7 +168,7 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     #train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=3, shuffle=True#batch_sampler=train_batches
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=args.batch_size, shuffle=True#batch_sampler=train_batches
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
@@ -160,9 +183,6 @@ def main(args):
 
     assert all(-(model.num_layers + 1) <= i <= model.num_layers for i in args.repr_layers)
     repr_layers = [(i + model.num_layers + 1) % (model.num_layers + 1) for i in args.repr_layers]
-    
-    if args.checkpoint is not None:
-        model.load_state_dict(torch.load(args.checkpoint))
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.backbone_lr)
@@ -171,10 +191,31 @@ def main(args):
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
     steps = 0
+    if args.checkpoint:
+        checkpoints = torch.load(args.checkpoint)
+        model.load_state_dict(checkpoints['model'])
+        linear.load_state_dict(checkpoints['linear'])
+    import numpy as np
+    total_step = 4 * len(train_data_loader)
+    total_step_15_percent = int(total_step * 0.15)
+    total_step_50_percent = int(total_step * 0.50)
+
+    n = (total_step_50_percent - total_step_15_percent) / 100
+    accu = 1
     for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             steps += 1
+            
+            if (steps > total_step_15_percent) and (steps - total_step_15_percent) % n == 0 and (steps - total_step_15_percent) / 100 <= n:
+                sparsity_current = args.pruning_ratio - args.pruning_ratio * (1 - (steps - total_step_15_percent) / (n * 100)) ** 3
+                sparsity_last = args.pruning_ratio - args.pruning_ratio * (1 - (steps - total_step_15_percent - 100) / (n * 100)) ** 3
+                remaining_rate_current = 1 - sparsity_current
+                remaining_rate_last = 1 - sparsity_last
+                epoch_pruning_ratio = 1 - remaining_rate_current / remaining_rate_last
+                accu = accu * (1 - epoch_pruning_ratio)
+                print(f"REMAINING WEIGHTS: {accu}")
+                pruning_model(model, epoch_pruning_ratio, 'omp')
             with torch.autograd.set_detect_anomaly(True):
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
@@ -194,7 +235,7 @@ def main(args):
                 optimizer.step()
                 model.zero_grad()
                 print(loss.item())
-            if steps % args.eval_freq == 0:
+            if steps % 10000 == 0:
                 model.eval()
                 with torch.no_grad():
                     outputs = []
@@ -221,7 +262,6 @@ def main(args):
                     print("EVALUATION:", float((outputs == tars).float().sum() / tars.nelement()))
                     acc = (outputs == tars).float().sum() / tars.nelement()
                     if acc > best:
-                        torch.save({"model": model.state_dict(), "linear": linear.state_dict()}, f"{args.output_name}.pth.tar")
                         best = acc
         lr_scheduler.step()
         
