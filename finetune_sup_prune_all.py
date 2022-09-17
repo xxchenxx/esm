@@ -91,7 +91,7 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--pruning_method", type=str, default='magnitude', choices=['magnitude', 'random', 'snip'])
-    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random'])
+    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random', 'dense'])
     parser.add_argument("--sparse_mode", type=str, default='DST', choices=['DST', 'GMP'])
     parser.add_argument("--batch_size", type=int, default=3)
     parser.add_argument("--eval_freq", type=int, default=5000)
