@@ -200,8 +200,10 @@ def main(args):
     total_step = 4 * len(train_data_loader)
     total_step_15_percent = int(total_step * 0.15)
     total_step_50_percent = int(total_step * 0.50)
-
-    n = (total_step_50_percent - total_step_15_percent) / 100
+    print(total_step_15_percent)
+    print(total_step_50_percent)
+    n = int((total_step_50_percent - total_step_15_percent) / 100)
+    print(n)
     accu = 1
     for epoch in range(4):
         model.train()
@@ -216,7 +218,9 @@ def main(args):
                 epoch_pruning_ratio = 1 - remaining_rate_current / remaining_rate_last
                 accu = accu * (1 - epoch_pruning_ratio)
                 print(f"REMAINING WEIGHTS: {accu}")
+                model = model.cpu()
                 pruning_model(model, epoch_pruning_ratio, 'omp')
+                model = model.cuda()
             with torch.autograd.set_detect_anomaly(True):
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
