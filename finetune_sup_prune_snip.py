@@ -91,6 +91,7 @@ def create_parser():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
+    parser.add_argument("--batch_size", type=int)
 
     return parser
 
@@ -117,7 +118,7 @@ def main(args):
     test_set = PickleBatchedDataset.from_file(args.split_file, False, args.fasta_file)
     #train_batches = train_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
     train_data_loader = torch.utils.data.DataLoader(
-        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=2, shuffle=True#batch_sampler=train_batches
+        train_set, collate_fn=alphabet.get_batch_converter(), batch_size=args.batch_size, shuffle=True#batch_sampler=train_batches
     )
     #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
 
@@ -140,9 +141,10 @@ def main(args):
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
     steps = 0
-    checkpoints = torch.load(args.checkpoint)
-    model.load_state_dict(checkpoints['model'])
-    linear.load_state_dict(checkpoints['linear'])
+    if args.checkpoint:
+        checkpoints = torch.load(args.checkpoint)
+        model.load_state_dict(checkpoints['model'])
+        linear.load_state_dict(checkpoints['linear'])
 
     for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
         steps += 1
