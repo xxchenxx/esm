@@ -90,10 +90,10 @@ def create_parser():
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
-
-    parser.add_argument("--batch-size", type=int, default=3)
-
+    parser.add_argument("--pruning_method", type=str, default='magnitude', choices=['magnitude', 'random', 'snip'])
+    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random'])
+    parser.add_argument("--batch_size", type=int, default=3)
+    parser.add_argument("--eval_freq", type=int, default=5000)
     return parser
 
 def pruning_model(model, px, method='omp'):
@@ -173,10 +173,13 @@ def main(args):
     # pruning_model(model, args.pruning_ratio, args.pruning_method)
 
     # optimizer = torchoptim.SGD(model.parameters(),lr=args.lr)
-    decay = CosineDecay(args.prune_rate, len(train_data_loader) * 4)
-    mask = Masking(optimizer, prune_rate_decay=decay)
+    decay = CosineDecay(0.5, len(train_data_loader) * 4)
+    mask = Masking(optimizer, prune_rate_decay=decay, prune_rate=0.5,
+                           sparsity=args.pruning_ratio, prune_mode=args.pruning_method,
+                           growth_mode='gradient', redistribution_mode='none', sparse_init=args.init_method)
     mask.add_module(model)
-
+    mask.init(model=model, train_loader=None, device=mask.device,
+                          mode=mask.sparse_init, density=(1 - mask.sparsity))
     for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
@@ -198,9 +201,12 @@ def main(args):
                         
                 loss.backward()
                 optimizer.step()
+                mask.step()
+                
                 model.zero_grad()
                 print(loss.item())
-            if steps % 10000 == 0:
+            if steps % args.eval_freq == 0:
+                mask.print_status()
                 model.eval()
                 with torch.no_grad():
                     outputs = []

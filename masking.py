@@ -42,17 +42,17 @@ class Masking(object):
         mask.add_module(model)
     """
     def __init__(self, optimizer, prune_rate_decay, prune_rate=0.5, sparsity=0.0, prune_mode='magnitude',
-                 growth_mode='random', redistribution_mode='momentum', verbose=False, fp16=False,
-                 args=False):
+                 growth_mode='gradient', redistribution_mode='none', verbose=False, fp16=False,
+                 sparse_init=None, sparse_mode='DST', fix=False, update_frequency=500, initial_prune_time=0.1, final_prune_time=0.8):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
             print('Growth mode: {0} not supported!'.format(growth_mode))
             print('Supported modes are:', str(growth_modes))
 
-        self.fix = args.spa.fix
-        self.sparse_init = args.spa.sparse_init
-        self.sparse_mode = args.spa.sparse_mode
-        self.update_frequency = args.spa.update_frequency
+        self.fix = fix
+        self.sparse_init = sparse_init
+        self.sparse_mode = sparse_mode
+        self.update_frequency = update_frequency
         self.sparsity = sparsity
         self.device = torch.device('cuda')
 
@@ -61,13 +61,13 @@ class Masking(object):
         self.growth_func = growth_mode
         self.prune_func = prune_mode
         self.redistribution_func = redistribution_mode
-        self.distributed_world_size = args.distributed_training.distributed_world_size
+        self.distributed_world_size = 1
 
         # parameters for GMP
         # T_max is the total training iterations
         self.total_step = self.prune_rate_decay.T_max
-        self.final_prune_time = int(self.total_step * args.spa.final_prune_time)
-        self.initial_prune_time = int(self.total_step * args.spa.initial_prune_time)
+        self.final_prune_time = int(self.total_step * final_prune_time)
+        self.initial_prune_time = int(self.total_step * initial_prune_time)
 
 
         self.global_growth = False
@@ -109,8 +109,12 @@ class Masking(object):
         # self.remove_weight_partial_name('fc1_weight')
         # print('Removing fc2_weight')
         # self.remove_weight_partial_name('fc2_weight')
-        print('lm_head.dense.weight')
+        print('Removing lm_head.dense.weight')
         self.remove_weight_partial_name('lm_head.dense.weight')
+        print('Removing contact_head')
+        self.remove_weight_partial_name('contact_head')
+        print('Removing embed_positions')
+        self.remove_weight_partial_name('embed_positions')
 
 
     def remove_weight(self, name):
