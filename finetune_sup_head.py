@@ -184,8 +184,8 @@ def main(args):
                     hiddens = linear(hidden)
                     loss = F.cross_entropy(hiddens.view(hiddens.shape[0], args.num_classes), labels)
                 # l2_norm = sum(torch.sum(p**2) for p in linear.parameters())
-                l1_norm = sum(torch.sum(p.abs()) for p in linear.parameters())
-                loss = loss + 0.05 * l1_norm
+                # l1_norm = sum(torch.sum(p.abs()) for p in linear.parameters())
+                # loss = loss + 0.05 * l1_norm
                 loss.backward()
                 optimizer.step()
                 linear.zero_grad()
