@@ -93,6 +93,7 @@ def create_parser():
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
 
     parser.add_argument("--batch-size", type=int, default=3)
+    parser.add_argument("--eval-freq", type=int, default=10000)
 
     return parser
 
@@ -235,7 +236,7 @@ def main(args):
                 optimizer.step()
                 model.zero_grad()
                 print(loss.item())
-            if steps % 10000 == 0:
+            if steps % args.eval_freq == 0:
                 model.eval()
                 with torch.no_grad():
                     outputs = []
