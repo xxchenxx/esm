@@ -218,7 +218,9 @@ def main(args):
                 epoch_pruning_ratio = 1 - remaining_rate_current / remaining_rate_last
                 accu = accu * (1 - epoch_pruning_ratio)
                 print(f"REMAINING WEIGHTS: {accu}")
+                model = model.cpu()
                 pruning_model(model, epoch_pruning_ratio, 'omp')
+                model = model.cuda()
             with torch.autograd.set_detect_anomaly(True):
                 print(
                     f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
