@@ -13,7 +13,7 @@ import torch.nn.utils.prune as prune
 import torch.nn as nn
 from esm import Alphabet, FastaBatchedDataset, ProteinBertModel, pretrained, CSVBatchedDataset, creating_ten_folds, PickleBatchedDataset, FireprotDBBatchedDataset
 from esm.modules import TransformerLayer
-
+from masking import Masking, CosineDecay
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -90,13 +90,37 @@ def create_parser():
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
-    parser.add_argument("--sparse_mode", type=str, default='omp', choices=['omp', 'rp', 'snip'])
-
-    parser.add_argument("--batch_size", type=int)
-
+    parser.add_argument("--pruning_method", type=str, default='magnitude', choices=['magnitude', 'random', 'snip'])
+    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random'])
+    parser.add_argument("--sparse_mode", type=str, default='DST', choices=['DST', 'GMP'])
+    parser.add_argument("--batch_size", type=int, default=3)
+    parser.add_argument("--eval_freq", type=int, default=5000)
     return parser
 
+def pruning_model(model, px, method='omp'):
+    
+    print('start unstructured pruning for all conv layers')
+    parameters_to_prune =[]
+    for name, m in model.named_modules():
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            print(f"Pruning {name}")
+            parameters_to_prune.append((m,'weight'))
+        if isinstance(m, TransformerLayer):
+            print(f"Pruning {name}.fc1")
+            parameters_to_prune.append((m.fc1,'weight'))
+            print(f"Pruning {name}.fc2")
+            parameters_to_prune.append((m.fc2,'weight'))
+
+    parameters_to_prune = tuple(parameters_to_prune)
+    if method == 'omp':
+        prune_method = prune.L1Unstructured
+    elif method == 'rp':
+        prune_method = prune.RandomUnstructured
+    prune.global_unstructured(
+        parameters_to_prune,
+        pruning_method=prune_method,
+        amount=px,
+    )
 
 def set_seed(args):
     torch.backends.cudnn.benchmark=False
@@ -147,48 +171,17 @@ def main(args):
         checkpoints = torch.load(args.checkpoint)
         model.load_state_dict(checkpoints['model'])
         linear.load_state_dict(checkpoints['linear'])
+    # pruning_model(model, args.pruning_ratio, args.pruning_method)
 
-    for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
-        steps += 1
-        with torch.autograd.set_detect_anomaly(True):
-            print(
-                f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
-            )
-            toks = toks.cuda()
-            
-            if args.truncate:
-                toks = toks[:, :1022]
-            out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
-
-            hidden = out['hidden']
-            logits = linear(hidden)
-            labels = torch.tensor(labels).cuda().long()
-            loss = (torch.nn.functional.cross_entropy(logits.reshape(-1, args.num_classes), labels.reshape(-1)))
-            loss.backward()
-        if steps > 100: 
-            break
-    scores = {}
-    for name, m in model.named_modules():
-        if 'self_attn' in name and isinstance(m, nn.Linear):
-           scores[name] = torch.clone(m.weight.grad).detach().abs_()
-        elif isinstance(m, TransformerLayer):
-            scores[name + ".fc1"] = torch.clone(m.fc1.weight.grad).detach().abs_()
-            scores[name + ".fc2"] = torch.clone(m.fc2.weight.grad).detach().abs_()
-    # normalize score
-    all_scores = torch.cat([torch.flatten(v) for v in scores.values()])
-    threshold = torch.kthvalue(all_scores, int(len(all_scores) * args.pruning_ratio))[0]
-    norm = torch.sum(all_scores)
-    for name in scores:
-        mask = torch.where(scores[name] < threshold, torch.tensor(0.0).cuda(), torch.tensor(1.0).cuda())
-        scores[name] = mask
-
-    for name,m in model.named_modules():
-        if 'self_attn' in name and isinstance(m, nn.Linear) and name in scores:
-            prune.CustomFromMask.apply(m, 'weight', mask=scores[name])
-        elif isinstance(m, TransformerLayer):
-            prune.CustomFromMask.apply(m.fc1, 'weight', mask=scores[name+".fc1"])
-            prune.CustomFromMask.apply(m.fc2, 'weight', mask=scores[name+".fc2"])
-
+    # optimizer = torchoptim.SGD(model.parameters(),lr=args.lr)
+    decay = CosineDecay(0.5, len(train_data_loader) * 4)
+    mask = Masking(optimizer, prune_rate_decay=decay, prune_rate=0.5,
+                           sparsity=args.pruning_ratio, prune_mode=args.pruning_method,
+                           growth_mode='gradient', redistribution_mode='none', sparse_init=args.init_method,
+                           sparse_mode=args.sparse_mode)
+    mask.add_module(model)
+    mask.init(model=model, train_loader=None, device=mask.device,
+                          mode=mask.sparse_init, density=(1 - mask.sparsity))
     for epoch in range(4):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
@@ -210,9 +203,12 @@ def main(args):
                         
                 loss.backward()
                 optimizer.step()
+                mask.step()
+                
                 model.zero_grad()
                 print(loss.item())
-            if steps % 10000 == 0:
+            if steps % args.eval_freq == 0:
+                mask.print_status()
                 model.eval()
                 with torch.no_grad():
                     outputs = []
