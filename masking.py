@@ -115,6 +115,8 @@ class Masking(object):
         self.remove_weight_partial_name('contact_head')
         print('Removing embed_positions')
         self.remove_weight_partial_name('embed_positions')
+        print('Removing embed_tokens')
+        self.remove_weight_partial_name('embed_tokens')
 
 
     def remove_weight(self, name):
