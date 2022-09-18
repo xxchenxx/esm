@@ -43,7 +43,7 @@ class Masking(object):
     """
     def __init__(self, optimizer, prune_rate_decay, prune_rate=0.5, sparsity=0.0, prune_mode='magnitude',
                  growth_mode='gradient', redistribution_mode='none', verbose=False, fp16=False,
-                 sparse_init=None, sparse_mode='DST', fix=False, update_frequency=500, initial_prune_time=0.1, final_prune_time=0.8):
+                 sparse_init=None, sparse_mode='DST', fix=False, update_frequency=500, initial_prune_time=0.0, final_prune_time=0.8):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
             print('Growth mode: {0} not supported!'.format(growth_mode))
@@ -522,20 +522,13 @@ class Masking(object):
         num_params_to_keep = int(len(all_scores) * (1 - current_pruning_rate))
         try:
             threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
-            acceptable_score = threshold[-1]
-
-            for module in self.modules:
-                for name, weight in module.named_parameters():
-                    if name not in self.masks: continue
-                    self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
-            self.apply_mask()
         except:
             threshold, _ = torch.topk(all_scores.cpu(), num_params_to_keep, sorted=True)
-            acceptable_score = threshold[-1]
+        acceptable_score = threshold[-1]
 
-            for module in self.modules:
-                for name, weight in module.named_parameters():
-                    if name not in self.masks: continue
-                    del self.masks[name]
-                    self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
-            self.apply_mask()
+        for module in self.modules:
+            for name, weight in module.named_parameters():
+                if name not in self.masks: continue
+                # del self.masks[name]
+                self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
+        self.apply_mask()

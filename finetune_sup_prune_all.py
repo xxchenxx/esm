@@ -95,6 +95,8 @@ def create_parser():
     parser.add_argument("--sparse_mode", type=str, default='DST', choices=['DST', 'GMP'])
     parser.add_argument("--batch_size", type=int, default=3)
     parser.add_argument("--eval_freq", type=int, default=5000)
+    parser.add_argument("--update_freq", type=int, default=500)
+
     return parser
 
 def pruning_model(model, px, method='omp'):
@@ -178,7 +180,7 @@ def main(args):
     mask = Masking(optimizer, prune_rate_decay=decay, prune_rate=0.5,
                            sparsity=args.pruning_ratio, prune_mode=args.pruning_method,
                            growth_mode='gradient', redistribution_mode='none', sparse_init=args.init_method,
-                           sparse_mode=args.sparse_mode)
+                           sparse_mode=args.sparse_mode, update_frequency=args.update_freq)
     mask.add_module(model)
     mask.init(model=model, train_loader=None, device=mask.device,
                           mode=mask.sparse_init, density=(1 - mask.sparsity))
