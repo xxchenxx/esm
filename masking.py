@@ -520,12 +520,22 @@ class Masking(object):
         # Gather all scores in a single vector and normalise
         all_scores = torch.cat([torch.flatten(x) for x in weight_abs])
         num_params_to_keep = int(len(all_scores) * (1 - current_pruning_rate))
+        try:
+            threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
+            acceptable_score = threshold[-1]
 
-        threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
-        acceptable_score = threshold[-1]
+            for module in self.modules:
+                for name, weight in module.named_parameters():
+                    if name not in self.masks: continue
+                    self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
+            self.apply_mask()
+        except:
+            threshold, _ = torch.topk(all_scores.cpu(), num_params_to_keep, sorted=True)
+            acceptable_score = threshold[-1]
 
-        for module in self.modules:
-            for name, weight in module.named_parameters():
-                if name not in self.masks: continue
-                self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
-        self.apply_mask()
+            for module in self.modules:
+                for name, weight in module.named_parameters():
+                    if name not in self.masks: continue
+                    del self.masks[name]
+                    self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
+            self.apply_mask()
