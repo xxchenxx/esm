@@ -241,7 +241,7 @@ def main(args):
                     if acc > best:
                         best = acc
         lr_scheduler.step()
-        
+        head_lr_scheduler.step()
     print(best)
 
 if __name__ == "__main__":
