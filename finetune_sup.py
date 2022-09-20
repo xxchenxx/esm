@@ -87,12 +87,15 @@ def create_parser():
 
     parser.add_argument("--nogpu", action="store_true", help="Do not use GPU even if available")
     parser.add_argument("--idx", type=str, default='0')
+    parser.add_argument("--epochs", type=int, default=4)
+
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--pruning_method", type=str, default='omp', choices=['omp', 'rp', 'snip'])
     parser.add_argument("--output_name", type=str)
     parser.add_argument("--eval_freq", type=int, default=10000)
+    parser.add_argument("--label-offset", type=int, default=0)
 
 
     return parser
@@ -166,12 +169,12 @@ def main(args):
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.backbone_lr)
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.backbone_lr, steps_per_epoch=1, epochs=int(4))
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.backbone_lr, steps_per_epoch=1, epochs=int(args.epochs))
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
-    head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
+    head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(args.epochs))
     steps = 0
-    for epoch in range(4):
+    for epoch in range(args.epochs):
         model.train()
         for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
             steps += 1
@@ -187,7 +190,7 @@ def main(args):
 
                 hidden = out['hidden']
                 logits = linear(hidden)
-                labels = torch.tensor(labels).cuda().long()
+                labels = torch.tensor(labels).cuda().long() - args.label_offset
                 loss = (torch.nn.functional.cross_entropy(logits.reshape(-1, args.num_classes), labels.reshape(-1)))
                         
                 loss.backward()
@@ -212,7 +215,7 @@ def main(args):
                         out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
                         hidden = out['hidden']
                         logits = linear(hidden)
-                        labels = torch.tensor(labels).cuda().long()
+                        labels = torch.tensor(labels).cuda().long() - args.label_offset
                         outputs.append(torch.argmax(logits.reshape(-1, args.num_classes), 1).view(-1))
                         tars.append(labels.reshape(-1))
                     import numpy as np
