@@ -90,8 +90,8 @@ def create_parser():
     parser.add_argument("--pruning_ratio", type=float, default=0)
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--pruning_method", type=str, default='magnitude', choices=['magnitude', 'random', 'snip'])
-    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random', 'dense'])
+    parser.add_argument("--pruning_method", type=str, default='magnitude', choices=['magnitude', 'random'])
+    parser.add_argument("--init_method", type=str, default='one_shot_gm', choices=['one_shot_gm', 'random', 'dense', 'snip'])
     parser.add_argument("--sparse_mode", type=str, default='DST', choices=['DST', 'GMP'])
     parser.add_argument("--batch_size", type=int, default=3)
     parser.add_argument("--eval_freq", type=int, default=5000)
@@ -131,6 +131,8 @@ def set_seed(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
+
+
 def main(args):
 
     set_seed(args)
@@ -148,10 +150,6 @@ def main(args):
     train_data_loader = torch.utils.data.DataLoader(
         train_set, collate_fn=alphabet.get_batch_converter(), batch_size=args.batch_size, shuffle=True#batch_sampler=train_batches
     )
-    #print(f"Read {args.fasta_file} with {len(train_sets[0])} sequences")
-
-    #test_batches = test_set.get_batch_indices(args.toks_per_batch, extra_toks_per_seq=1)
-
     test_data_loader = torch.utils.data.DataLoader(
         test_set, collate_fn=alphabet.get_batch_converter(), #batch_sampler=test_batches
     )
@@ -173,7 +171,47 @@ def main(args):
         checkpoints = torch.load(args.checkpoint)
         model.load_state_dict(checkpoints['model'])
         linear.load_state_dict(checkpoints['linear'])
-    # pruning_model(model, args.pruning_ratio, args.pruning_method)
+    def snip(keep_ratio, masks):
+        steps = 0
+        
+        for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
+            steps += 1
+            with torch.autograd.set_detect_anomaly(True):
+                print(
+                    f"Processing {batch_idx + 1} of {len(train_data_loader)} batches ({toks.size(0)} sequences)"
+                )
+                toks = toks.cuda()
+                
+                if args.truncate:
+                    toks = toks[:, :1022]
+                out = model(toks, repr_layers=repr_layers, return_contacts=return_contacts, return_temp=True)
+
+                hidden = out['hidden']
+                logits = linear(hidden)
+                labels = torch.tensor(labels).cuda().long()
+                loss = (torch.nn.functional.cross_entropy(logits.reshape(-1, args.num_classes), labels.reshape(-1)))
+                loss.backward()
+            if steps > 100: 
+                break
+        grads_abs = []
+        print(masks)
+        for name, m in model.named_modules():
+            if name + ".weight" in masks:
+                grads_abs.append(torch.clone(m.weight.grad).detach().abs_())
+
+        # normalize score
+        all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
+        num_params_to_keep = int(len(all_scores) * keep_ratio)
+        threshold, _ = torch.topk(all_scores, num_params_to_keep+1, sorted=True)
+        acceptable_score = threshold[-1]
+        layer_wise_sparsities = []
+        for g in grads_abs:
+            mask_ = (g > acceptable_score).float()
+            layer_wise_sparsities.append(mask_)
+
+        model.zero_grad()
+
+        return layer_wise_sparsities
 
     # optimizer = torchoptim.SGD(model.parameters(),lr=args.lr)
     decay = CosineDecay(0.5, len(train_data_loader) * 4)
@@ -182,7 +220,15 @@ def main(args):
                            growth_mode='gradient', redistribution_mode='none', sparse_init=args.init_method,
                            sparse_mode=args.sparse_mode, update_frequency=args.update_freq)
     mask.add_module(model)
-    mask.init(model=model, train_loader=None, device=mask.device,
+    if mask.sparse_init == 'snip':
+        mask.init_growth_prune_and_redist()
+        layer_wise_sparsities = snip(1 - mask.sparsity, mask.masks)
+        for snip_mask, name in zip(layer_wise_sparsities, mask.masks):
+            mask.masks[name][:] = snip_mask
+        mask.apply_mask()
+        mask.print_status()
+    else:
+        mask.init(model=model, train_loader=None, device=mask.device,
                           mode=mask.sparse_init, density=(1 - mask.sparsity))
     for epoch in range(4):
         model.train()

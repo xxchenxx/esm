@@ -142,12 +142,13 @@ def main(args):
     linear = nn.Sequential( nn.Linear(1280, 512), nn.LayerNorm(512), nn.ReLU(), nn.Linear(512, args.num_classes)).cuda()
     head_optimizer = torch.optim.AdamW(linear.parameters(), lr=args.lr)
     head_lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(head_optimizer, max_lr=args.lr, steps_per_epoch=1, epochs=int(4))
-    steps = 0
+    
     if args.checkpoint:
         checkpoints = torch.load(args.checkpoint)
         model.load_state_dict(checkpoints['model'])
         linear.load_state_dict(checkpoints['linear'])
 
+    steps = 0
     for batch_idx, (labels, strs, toks) in enumerate(train_data_loader):
         steps += 1
         with torch.autograd.set_detect_anomaly(True):
