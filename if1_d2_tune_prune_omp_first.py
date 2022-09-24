@@ -6,12 +6,11 @@ import torch.nn as nn
 import sys
 from esm.modules import TransformerLayer
 from torch.nn.utils import prune
-from masking import CosineDecay, Masking
 split_num = sys.argv[1]
 split = pickle.load(open(f"/home/xc4863/clean_datasets/d2/d2_{split_num}_classification.pkl", "rb"))
 backbone_lr = float(sys.argv[3])
 lr = float(sys.argv[2])
-epochs = int(sys.argv[4])
+epoch = int(sys.argv[4])
 pruning_ratio=float(sys.argv[5])
 model, alphabet = esm.pretrained.esm_if1_gvp4_t16_142M_UR50()
 model = model.cuda()
@@ -19,9 +18,6 @@ linear = nn.Sequential( nn.Linear(512, 128), nn.LayerNorm(128), nn.ReLU(), nn.Li
 optimizer = torch.optim.AdamW(linear.parameters(), lr=lr, weight_decay=5e-2)
 lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=lr, steps_per_epoch=1, epochs=int(epoch))
 backbone_optimizer = torch.optim.AdamW(model.parameters(), lr=backbone_lr, weight_decay=5e-2)
-checkpoint = torch.load(f"dense_d2_esm1f_{split_num}.pth.tar")
-model.load_state_dict(checkpoint['model'])
-linear.load_state_dict(checkpoint['linear'])
 best_acc = 0
 
 def pruning_model(model, px, method='omp'):
@@ -52,13 +48,9 @@ def pruning_model(model, px, method='omp'):
         amount=px,
     )
 
-decay = CosineDecay(pruning_ratio, len(split['train_names']) * (epochs))
-mask = Masking(optimizer, prune_rate_decay=decay)
-
-mask.add_module(model)
 pruning_model(model, pruning_ratio)
 
-for epoch in range(epochs):
+for epoch in range(epoch):
     outputs = []
     labels = []
     for name, label in zip(split['train_names'], split['train_labels']):
