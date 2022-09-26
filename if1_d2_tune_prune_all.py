@@ -34,6 +34,8 @@ mask = Masking(optimizer, prune_rate_decay=decay, prune_rate=0.5,
 mask.add_module(model)
 
 def snip(keep_ratio, masks):
+    outputs = []
+    labels = []
     for batch_idx, (name, label) in enumerate(zip(split['train_names'], split['train_labels'])):
         fpath = f"/home/xc4863/clean_datasets/d2/d2_clean/{name}/unrelaxed_model_1_ptm.pdb"
         # print(fpath)
@@ -42,7 +44,7 @@ def snip(keep_ratio, masks):
         coords = torch.from_numpy(coords).cuda()
         rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)
         # print(rep.shape)
-        print(rep)
+
         output = linear(rep.mean(0, keepdim=True))
         outputs.append(output)
         labels.append(torch.tensor(label).long().cuda())
@@ -57,7 +59,6 @@ def snip(keep_ratio, masks):
             labels = []
         if batch_idx > 10: break
     grads_abs = []
-    print(masks)
     for name, m in model.named_modules():
         if name + ".weight" in masks:
             grads_abs.append(torch.clone(m.weight.grad).detach().abs_())

@@ -7,7 +7,7 @@ import sys
 from esm.modules import TransformerLayer
 from torch.nn.utils import prune
 split_num = sys.argv[1]
-split = pickle.load(open(f"/home/xc4863/clean_datasets/d2/d2_{split_num}_classification.pkl", "rb"))
+split = pickle.load(open(f"/ssd1/xuxi/clean_datasets/d2/d2_{split_num}_classification.pkl", "rb"))
 backbone_lr = float(sys.argv[3])
 lr = float(sys.argv[2])
 epoch = int(sys.argv[4])
@@ -54,7 +54,7 @@ for epoch in range(epoch):
     outputs = []
     labels = []
     for name, label in zip(split['train_names'], split['train_labels']):
-        fpath = f"/home/xc4863/clean_datasets/d2/d2_clean/{name}/unrelaxed_model_1_ptm.pdb"
+        fpath = f"/ssd1/xuxi/clean_datasets/d2/d2_clean/{name}/unrelaxed_model_1_ptm.pdb"
         # print(fpath)
         
         structure = esm.inverse_folding.util.load_structure(fpath, 'A')
@@ -89,7 +89,7 @@ for epoch in range(epoch):
     lr_scheduler.step()
     with torch.no_grad():
         for name, label in zip(split['test_names'], split['test_labels']):
-            fpath = f"/home/xc4863/clean_datasets/d2/d2_clean/{name}/unrelaxed_model_1_ptm.pdb"
+            fpath = f"/ssd1/xuxi/clean_datasets/d2/d2_clean/{name}/unrelaxed_model_1_ptm.pdb"
             structure = esm.inverse_folding.util.load_structure(fpath, 'A')
             coords, native_seq = esm.inverse_folding.util.extract_coords_from_structure(structure)
             rep = esm.inverse_folding.util.get_encoder_output(model, alphabet, coords)

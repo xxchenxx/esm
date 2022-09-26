@@ -112,7 +112,8 @@ def main(args):
     set_seed(args)
     best = 0
     model, alphabet = pretrained.load_model_and_alphabet(args.model_location, num_classes=args.num_classes, noise_aug=args.noise, rank=args.rank)
-    model.load_state_dict(torch.load("checkpoint_sequencemoco.pt", map_location='cpu')['state_dict'])
+    # model.load_state_dict(torch.load("checkpoint_sequencemoco.pt", map_location='cpu')['state_dict'])
+    model.load_state_dict(torch.load("checkpoint_3dmoco.pt", map_location='cpu')['state_dict'])
     model.eval()
     wandb.init(project=f"protein", entity="xxchen", name=args.wandb_name)
     wandb.config.update(vars(args))
