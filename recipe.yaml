@@ -1,0 +1,23 @@
+training_modifiers:
+  - !OBSPruningModifier
+    params: [
+      "re:layers.*.self_attn.k_proj.weight",
+      "re:layers.*.self_attn.q_proj.weight",
+      "re:layers.*.self_attn.v_proj.weight",
+      "re:layers.*.self_attn.out_proj.weight",
+      "re:layers.*.fc1.weight",
+      "re:layers.*.fc2.weight",
+    ]
+    init_sparsity: 0.0
+    final_sparsity: 0.2
+    start_epoch: 0
+    end_epoch: 3.75
+    update_frequency: 0.25
+    inter_func: cubic
+    global_sparsity: True
+    mask_type: unstructured
+    num_grads: 1 
+    damp: 1e-7
+    fisher_block_size: 1 
+    grad_sampler_kwargs:
+      batch_size: 1 
