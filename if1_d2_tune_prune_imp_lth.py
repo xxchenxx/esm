@@ -14,7 +14,10 @@ epoch = int(sys.argv[4])
 pruning_ratio=float(sys.argv[5])
 model, alphabet = esm.pretrained.esm_if1_gvp4_t16_142M_UR50()
 model = model.cuda()
+import copy
+pretrained_weights = copy.deepcopy(model.state_dict())
 linear = nn.Sequential( nn.Linear(512, 128), nn.LayerNorm(128), nn.ReLU(), nn.Linear(128, 5)).cuda() 
+linear_init = copy.deepcopy(linear.state_dict())
 optimizer = torch.optim.AdamW(linear.parameters(), lr=lr, weight_decay=5e-2)
 lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=lr, steps_per_epoch=1, epochs=int(epoch))
 backbone_optimizer = torch.optim.AdamW(model.parameters(), lr=backbone_lr, weight_decay=5e-2)
@@ -50,6 +53,42 @@ def pruning_model(model, px, method='omp'):
         pruning_method=prune_method,
         amount=px,
     )
+import copy
+def extract_mask(model_dict):
+
+    new_dict = {}
+
+    for key in model_dict.keys():
+        if 'mask' in key:
+            new_dict[key] = copy.deepcopy(model_dict[key])
+
+    return new_dict
+def remove_prune(model):
+    
+    print('remove pruning')
+    for name,m in model.named_modules():
+        if 'decoder' in name:
+            continue
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            print(f"Pruning {name}")
+            prune.remove(m,'weight')
+        if isinstance(m, TransformerLayer):
+            print(f"Pruning {name}.fc1")
+            prune.remove(m.fc1,'weight')
+            print(f"Pruning {name}.fc2")
+            prune.remove(m.fc2,'weight')
+            # prune.remove(m,'weight')
+def prune_model_custom(model, mask_dict):
+
+    print('start unstructured pruning with custom mask')
+    for name,m in model.named_modules():
+        if 'decoder' in name:
+            continue
+        if 'self_attn' in name and isinstance(m, nn.Linear):
+            prune.CustomFromMask.apply(m, 'weight', mask=mask_dict[name+'.weight_mask'])
+        if isinstance(m, TransformerLayer):
+            prune.CustomFromMask.apply(m.fc1, 'weight', mask=mask_dict[name+'.fc1.weight_mask'])
+            prune.CustomFromMask.apply(m.fc2, 'weight', mask=mask_dict[name+'.fc2.weight_mask'])
 
 for _round in range(9):
     best_acc = 0 
@@ -57,7 +96,11 @@ for _round in range(9):
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=lr, steps_per_epoch=1, epochs=int(epoch))
     backbone_optimizer = torch.optim.AdamW(model.parameters(), lr=backbone_lr, weight_decay=5e-2)
     pruning_model(model, pruning_ratio)
-    
+    masks = extract_mask(model.state_dict())
+    remove_prune(model)
+    model.load_state_dict(pretrained_weights)
+    linear.load_state_dict(linear_init)
+    prune_model_custom(model, masks)
     for epoch_ in range(epoch):
         outputs = []
         labels = []

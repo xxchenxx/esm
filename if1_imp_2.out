@@ -1,0 +1,77 @@
+/ssd1/xuxi/esm/esm/pretrained.py:173: UserWarning: Regression weights not found, predicting contacts will not produce correct results.
+  "Regression weights not found, predicting contacts will not produce correct results."
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+remove pruning
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+Pruning decoder.layers.0.self_attn.k_proj
+Traceback (most recent call last):
+  File "if1_d2_tune_prune_imp_lth.py", line 94, in <module>
+    remove_prune(model)
+  File "if1_d2_tune_prune_imp_lth.py", line 70, in remove_prune
+    prune.remove(m,'weight')
+  File "/home/xc4863/anaconda3/envs/lora_masks/lib/python3.7/site-packages/torch/nn/utils/prune.py", line 1184, in remove
+    "before pruning can be removed".format(name, module)
+ValueError: Parameter 'weight' of module Linear(in_features=512, out_features=512, bias=True) has to be pruned before pruning can be removed

@@ -1,0 +1,814 @@
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3077, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.6333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6635, device='cuda:0')
+tensor(0.6731, device='cuda:0')
+tensor(0.5385, device='cuda:0')
+tensor(0.4878, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5000, device='cuda:0')
+tensor(0.5714, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7317, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.8000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5769, device='cuda:0')
+tensor(0.6122, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.6829, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.8000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.6222, device='cuda:0')
+tensor(0.4615, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.6333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6635, device='cuda:0')
+tensor(0.6364, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.6585, device='cuda:0')
+tensor(0.6333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5769, device='cuda:0')
+tensor(0.5510, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.5965, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.7073, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5288, device='cuda:0')
+tensor(0.5370, device='cuda:0')
+BEST_ACC: 0.6634615659713745
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3846, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.5862, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.4390, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.4712, device='cuda:0')
+tensor(0.5806, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7073, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.6304, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.6207, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6346, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.7561, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5673, device='cuda:0')
+tensor(0.5741, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.4000, device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.6140, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0.2000, device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.6071, device='cuda:0')
+BEST_ACC: 0.634615421295166
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.2308, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.4000, device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.5902, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.7317, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5769, device='cuda:0')
+tensor(0.5882, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.5366, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.4808, device='cuda:0')
+tensor(0.6111, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.6098, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5385, device='cuda:0')
+tensor(0.5682, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.6034, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8049, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.7317, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5192, device='cuda:0')
+tensor(0.5882, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.6341, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.2000, device='cuda:0')
+ACC: tensor(0.5192, device='cuda:0')
+tensor(0.5652, device='cuda:0')
+BEST_ACC: 0.625
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3077, device='cuda:0')
+tensor(0.8049, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5769, device='cuda:0')
+tensor(0.5789, device='cuda:0')
+tensor(0.3846, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.6102, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.3902, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.4423, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7317, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.6122, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.5965, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.6341, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5288, device='cuda:0')
+tensor(0.5652, device='cuda:0')
+tensor(0.3846, device='cuda:0')
+tensor(0.7073, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5385, device='cuda:0')
+tensor(0.5577, device='cuda:0')
+tensor(0.3846, device='cuda:0')
+tensor(0.8049, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+BEST_ACC: 0.625
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3846, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.5833, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.5854, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.4904, device='cuda:0')
+tensor(0.5581, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.5610, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5000, device='cuda:0')
+tensor(0.5750, device='cuda:0')
+tensor(0.1538, device='cuda:0')
+tensor(0.7073, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5577, device='cuda:0')
+tensor(0.6042, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.7000, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6346, device='cuda:0')
+tensor(0.6250, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7805, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.6154, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7561, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5577, device='cuda:0')
+tensor(0.5636, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7317, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5481, device='cuda:0')
+tensor(0.5769, device='cuda:0')
+BEST_ACC: 0.634615421295166
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3077, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.5965, device='cuda:0')
+tensor(0.1538, device='cuda:0')
+tensor(0.6098, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5192, device='cuda:0')
+tensor(0.5556, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.4878, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.4904, device='cuda:0')
+tensor(0.5882, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.6829, device='cuda:0')
+tensor(0.7000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.5957, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.9268, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.5846, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.6034, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.6071, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.6250, device='cuda:0')
+BEST_ACC: 0.625
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.3077, device='cuda:0')
+tensor(0.8049, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.5893, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.6585, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5385, device='cuda:0')
+tensor(0.5870, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.5610, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5096, device='cuda:0')
+tensor(0.6389, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.9024, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6346, device='cuda:0')
+tensor(0.6379, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.6333, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.6182, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.7805, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.5926, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6250, device='cuda:0')
+tensor(0.5932, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.9268, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6635, device='cuda:0')
+tensor(0.6441, device='cuda:0')
+BEST_ACC: 0.6634615659713745
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.2308, device='cuda:0')
+tensor(0.9024, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.4000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.5781, device='cuda:0')
+tensor(0.4615, device='cuda:0')
+tensor(0.7073, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.6304, device='cuda:0')
+tensor(0.3846, device='cuda:0')
+tensor(0.5610, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')/home/xc4863/esm/esm/pretrained.py:173: UserWarning: Regression weights not found, predicting contacts will not produce correct results.
+  "Regression weights not found, predicting contacts will not produce correct results."
+/home/xc4863/esm/esm/inverse_folding/util.py:243: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  for cd, _ in coords_and_confidence
+
+ACC: tensor(0.5192, device='cuda:0')
+tensor(0.6389, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.7805, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5865, device='cuda:0')
+tensor(0.6275, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.6102, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.9268, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6538, device='cuda:0')
+tensor(0.6441, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.9512, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6538, device='cuda:0')
+tensor(0.6094, device='cuda:0')
+tensor(0.3077, device='cuda:0')
+tensor(0.9268, device='cuda:0')
+tensor(0.5000, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6346, device='cuda:0')
+tensor(0.5938, device='cuda:0')
+BEST_ACC: 0.6538462042808533
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+tensor(0.2308, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6346, device='cuda:0')
+tensor(0.6102, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6154, device='cuda:0')
+tensor(0.6604, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.5366, device='cuda:0')
+tensor(0.6333, device='cuda:0')
+tensor(0.6667, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5192, device='cuda:0')
+tensor(0.5641, device='cuda:0')
+tensor(0.1538, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.5333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.6207, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8780, device='cuda:0')
+tensor(0.3333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5577, device='cuda:0')
+tensor(0.5714, device='cuda:0')
+tensor(0.1538, device='cuda:0')
+tensor(0.8293, device='cuda:0')
+tensor(0.4333, device='cuda:0')
+tensor(0.6000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5577, device='cuda:0')
+tensor(0.5667, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.4000, device='cuda:0')
+tensor(0.8000, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.5962, device='cuda:0')
+tensor(0.6604, device='cuda:0')
+tensor(0.2308, device='cuda:0')
+tensor(0.8537, device='cuda:0')
+tensor(0.4667, device='cuda:0')
+tensor(0.7333, device='cuda:0')
+tensor(0., device='cuda:0')
+ACC: tensor(0.6058, device='cuda:0')
+tensor(0.6250, device='cuda:0')
+BEST_ACC: 0.634615421295166

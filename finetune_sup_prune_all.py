@@ -194,7 +194,7 @@ def main(args):
             if steps > 100: 
                 break
         grads_abs = []
-        print(masks)
+        
         for name, m in model.named_modules():
             if name + ".weight" in masks:
                 grads_abs.append(torch.clone(m.weight.grad).detach().abs_())

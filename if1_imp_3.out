@@ -1,0 +1,43 @@
+/ssd1/xuxi/esm/esm/pretrained.py:173: UserWarning: Regression weights not found, predicting contacts will not produce correct results.
+  "Regression weights not found, predicting contacts will not produce correct results."
+start unstructured pruning for all conv layers
+Pruning encoder.layers.0.self_attn.k_proj
+Pruning encoder.layers.0.self_attn.v_proj
+Pruning encoder.layers.0.self_attn.q_proj
+Pruning encoder.layers.0.self_attn.out_proj
+Pruning encoder.layers.1.self_attn.k_proj
+Pruning encoder.layers.1.self_attn.v_proj
+Pruning encoder.layers.1.self_attn.q_proj
+Pruning encoder.layers.1.self_attn.out_proj
+Pruning encoder.layers.2.self_attn.k_proj
+Pruning encoder.layers.2.self_attn.v_proj
+Pruning encoder.layers.2.self_attn.q_proj
+Pruning encoder.layers.2.self_attn.out_proj
+Pruning encoder.layers.3.self_attn.k_proj
+Pruning encoder.layers.3.self_attn.v_proj
+Pruning encoder.layers.3.self_attn.q_proj
+Pruning encoder.layers.3.self_attn.out_proj
+Pruning encoder.layers.4.self_attn.k_proj
+Pruning encoder.layers.4.self_attn.v_proj
+Pruning encoder.layers.4.self_attn.q_proj
+Pruning encoder.layers.4.self_attn.out_proj
+Pruning encoder.layers.5.self_attn.k_proj
+Pruning encoder.layers.5.self_attn.v_proj
+Pruning encoder.layers.5.self_attn.q_proj
+Pruning encoder.layers.5.self_attn.out_proj
+Pruning encoder.layers.6.self_attn.k_proj
+Pruning encoder.layers.6.self_attn.v_proj
+Pruning encoder.layers.6.self_attn.q_proj
+Pruning encoder.layers.6.self_attn.out_proj
+Pruning encoder.layers.7.self_attn.k_proj
+Pruning encoder.layers.7.self_attn.v_proj
+Pruning encoder.layers.7.self_attn.q_proj
+Pruning encoder.layers.7.self_attn.out_proj
+Traceback (most recent call last):
+  File "if1_d2_tune_prune_imp_lth.py", line 61, in <module>
+    model.load_state_dict(pretrained_weights)
+  File "/home/xc4863/anaconda3/envs/lora_masks/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1407, in load_state_dict
+    self.__class__.__name__, "\n\t".join(error_msgs)))
+RuntimeError: Error(s) in loading state_dict for GVPTransformerModel:
+	Missing key(s) in state_dict: "encoder.layers.0.self_attn.k_proj.weight_orig", "encoder.layers.0.self_attn.k_proj.weight_mask", "encoder.layers.0.self_attn.v_proj.weight_orig", "encoder.layers.0.self_attn.v_proj.weight_mask", "encoder.layers.0.self_attn.q_proj.weight_orig", "encoder.layers.0.self_attn.q_proj.weight_mask", "encoder.layers.0.self_attn.out_proj.weight_orig", "encoder.layers.0.self_attn.out_proj.weight_mask", "encoder.layers.1.self_attn.k_proj.weight_orig", "encoder.layers.1.self_attn.k_proj.weight_mask", "encoder.layers.1.self_attn.v_proj.weight_orig", "encoder.layers.1.self_attn.v_proj.weight_mask", "encoder.layers.1.self_attn.q_proj.weight_orig", "encoder.layers.1.self_attn.q_proj.weight_mask", "encoder.layers.1.self_attn.out_proj.weight_orig", "encoder.layers.1.self_attn.out_proj.weight_mask", "encoder.layers.2.self_attn.k_proj.weight_orig", "encoder.layers.2.self_attn.k_proj.weight_mask", "encoder.layers.2.self_attn.v_proj.weight_orig", "encoder.layers.2.self_attn.v_proj.weight_mask", "encoder.layers.2.self_attn.q_proj.weight_orig", "encoder.layers.2.self_attn.q_proj.weight_mask", "encoder.layers.2.self_attn.out_proj.weight_orig", "encoder.layers.2.self_attn.out_proj.weight_mask", "encoder.layers.3.self_attn.k_proj.weight_orig", "encoder.layers.3.self_attn.k_proj.weight_mask", "encoder.layers.3.self_attn.v_proj.weight_orig", "encoder.layers.3.self_attn.v_proj.weight_mask", "encoder.layers.3.self_attn.q_proj.weight_orig", "encoder.layers.3.self_attn.q_proj.weight_mask", "encoder.layers.3.self_attn.out_proj.weight_orig", "encoder.layers.3.self_attn.out_proj.weight_mask", "encoder.layers.4.self_attn.k_proj.weight_orig", "encoder.layers.4.self_attn.k_proj.weight_mask", "encoder.layers.4.self_attn.v_proj.weight_orig", "encoder.layers.4.self_attn.v_proj.weight_mask", "encoder.layers.4.self_attn.q_proj.weight_orig", "encoder.layers.4.self_attn.q_proj.weight_mask", "encoder.layers.4.self_attn.out_proj.weight_orig", "encoder.layers.4.self_attn.out_proj.weight_mask", "encoder.layers.5.self_attn.k_proj.weight_orig", "encoder.layers.5.self_attn.k_proj.weight_mask", "encoder.layers.5.self_attn.v_proj.weight_orig", "encoder.layers.5.self_attn.v_proj.weight_mask", "encoder.layers.5.self_attn.q_proj.weight_orig", "encoder.layers.5.self_attn.q_proj.weight_mask", "encoder.layers.5.self_attn.out_proj.weight_orig", "encoder.layers.5.self_attn.out_proj.weight_mask", "encoder.layers.6.self_attn.k_proj.weight_orig", "encoder.layers.6.self_attn.k_proj.weight_mask", "encoder.layers.6.self_attn.v_proj.weight_orig", "encoder.layers.6.self_attn.v_proj.weight_mask", "encoder.layers.6.self_attn.q_proj.weight_orig", "encoder.layers.6.self_attn.q_proj.weight_mask", "encoder.layers.6.self_attn.out_proj.weight_orig", "encoder.layers.6.self_attn.out_proj.weight_mask", "encoder.layers.7.self_attn.k_proj.weight_orig", "encoder.layers.7.self_attn.k_proj.weight_mask", "encoder.layers.7.self_attn.v_proj.weight_orig", "encoder.layers.7.self_attn.v_proj.weight_mask", "encoder.layers.7.self_attn.q_proj.weight_orig", "encoder.layers.7.self_attn.q_proj.weight_mask", "encoder.layers.7.self_attn.out_proj.weight_orig", "encoder.layers.7.self_attn.out_proj.weight_mask". 
+	Unexpected key(s) in state_dict: "encoder.layers.0.self_attn.k_proj.weight", "encoder.layers.0.self_attn.v_proj.weight", "encoder.layers.0.self_attn.q_proj.weight", "encoder.layers.0.self_attn.out_proj.weight", "encoder.layers.1.self_attn.k_proj.weight", "encoder.layers.1.self_attn.v_proj.weight", "encoder.layers.1.self_attn.q_proj.weight", "encoder.layers.1.self_attn.out_proj.weight", "encoder.layers.2.self_attn.k_proj.weight", "encoder.layers.2.self_attn.v_proj.weight", "encoder.layers.2.self_attn.q_proj.weight", "encoder.layers.2.self_attn.out_proj.weight", "encoder.layers.3.self_attn.k_proj.weight", "encoder.layers.3.self_attn.v_proj.weight", "encoder.layers.3.self_attn.q_proj.weight", "encoder.layers.3.self_attn.out_proj.weight", "encoder.layers.4.self_attn.k_proj.weight", "encoder.layers.4.self_attn.v_proj.weight", "encoder.layers.4.self_attn.q_proj.weight", "encoder.layers.4.self_attn.out_proj.weight", "encoder.layers.5.self_attn.k_proj.weight", "encoder.layers.5.self_attn.v_proj.weight", "encoder.layers.5.self_attn.q_proj.weight", "encoder.layers.5.self_attn.out_proj.weight", "encoder.layers.6.self_attn.k_proj.weight", "encoder.layers.6.self_attn.v_proj.weight", "encoder.layers.6.self_attn.q_proj.weight", "encoder.layers.6.self_attn.out_proj.weight", "encoder.layers.7.self_attn.k_proj.weight", "encoder.layers.7.self_attn.v_proj.weight", "encoder.layers.7.self_attn.q_proj.weight", "encoder.layers.7.self_attn.out_proj.weight". 
