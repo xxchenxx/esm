@@ -12,9 +12,15 @@ import shutil
 import torch
 from pathlib import Path
 from esm.constants import proteinseq_toks
-
+import pandas as pd
+import numpy as np
 RawMSA = Sequence[Tuple[str, str]]
+from transformers.data.processors import InputExample
+from transformers import glue_convert_examples_to_features as convert_examples_to_features
 
+def split_dna_sequence_into_k_mer(seq, k):
+    seq = seq.upper()
+    return ' '.join([seq[i:(i + k)] for i in range(0, len(seq) - k + 1)])
 
 class FastaBatchedDataset(object):
     def __init__(self, sequence_labels, sequence_strs):
@@ -88,6 +94,83 @@ class FastaBatchedDataset(object):
         return batches
 
 
+
+
+            
+class CSVDNABatchedDataset(object):
+    def __init__(self, sequence_labels, sequence_strs, sequence_targets, attention_masks, token_type_ids):
+        self.sequence_labels = list(sequence_labels)
+        self.sequence_strs = list(sequence_strs)
+        self.sequence_targets = list(sequence_targets)
+        self.attention_masks = list(attention_masks)
+        self.token_type_ids = list(token_type_ids)
+
+    @classmethod
+    def from_file(cls, csv_file, args, tokenizer, output_mode, pad_on_left, pad_token, pad_token_segment_id, k_mer=3):
+        sequence_labels, sequence_strs, sequence_targets = [], [], []
+        cur_seq_label = None
+
+        data = pd.read_csv(csv_file)
+        seqs = data['protein_sequence']
+        targets = data['sequence']
+        for line_idx in range(len(data)):
+            line = seqs.iloc[line_idx]
+            target = targets.iloc[line_idx]
+            cur_seq_label = f"seqnum{line_idx:09d}"
+            if isinstance(line, str) and len(line) <= 800:
+                sequence_labels.append(cur_seq_label)
+                sequence_strs.append(line)
+                target = split_dna_sequence_into_k_mer(target, k_mer)
+                
+                max_length = args.max_seq_length
+                example = InputExample(guid='test', text_a=target, text_b=None, label=0)
+                sequence_targets.append(example)
+        features = convert_examples_to_features(
+            sequence_targets,
+            tokenizer,
+            label_list=[0] * len(sequence_targets),
+            max_length=max_length,
+            output_mode=output_mode,
+            pad_on_left=pad_on_left,  # pad on the left for xlnet
+            pad_token=pad_token,
+            pad_token_segment_id=pad_token_segment_id,)
+        all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long).cuda()
+        all_attention_mask = torch.tensor([f.attention_mask for f in features], dtype=torch.long).cuda()
+        all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long).cuda()
+        return cls(sequence_labels, sequence_strs, all_input_ids, all_attention_mask, all_token_type_ids)
+
+    def __len__(self):
+        return len(self.sequence_labels)
+
+    def __getitem__(self, idx):
+        return self.sequence_targets[idx], self.sequence_strs[idx], self.attention_masks[idx], self.token_type_ids[idx]
+
+    def get_batch_indices(self, toks_per_batch, extra_toks_per_seq=0):
+        sizes = [(len(s), i) for i, s in enumerate(self.sequence_strs)]
+        sizes.sort()
+        batches = []
+        buf = []
+        max_len = 0
+
+        def _flush_current_buf():
+            nonlocal max_len, buf
+            if len(buf) == 0:
+                return
+            batches.append(buf)
+            buf = []
+            max_len = 0
+
+        for sz, i in sizes:
+            sz += extra_toks_per_seq
+            if max(sz, max_len) * (len(buf) + 1) > toks_per_batch:
+                _flush_current_buf()
+            max_len = max(max_len, sz)
+            buf.append(i)
+
+        _flush_current_buf()
+        return batches
+
+
 class Alphabet(object):
     def __init__(
         self,
@@ -133,9 +216,11 @@ class Alphabet(object):
     def to_dict(self):
         return self.tok_to_idx.copy()
 
-    def get_batch_converter(self, truncation_seq_length: int = None):
+    def get_batch_converter(self, truncation_seq_length: int = None, with_attention=False):
         if self.use_msa:
             return MSABatchConverter(self, truncation_seq_length)
+        elif with_attention:
+            return BatchConverterWithAttention(self, truncation_seq_length)
         else:
             return BatchConverter(self, truncation_seq_length)
 
@@ -250,6 +335,57 @@ class Alphabet(object):
         return [self.tok_to_idx[tok] for tok in self.tokenize(text)]
 
 
+class BatchConverterWithAttention(object):
+    """Callable to convert an unprocessed (labels + strings) batch to a
+    processed (labels + tensor) batch.
+    """
+
+    def __init__(self, alphabet, truncation_seq_length: int = None):
+        self.alphabet = alphabet
+        self.truncation_seq_length = truncation_seq_length
+
+    def __call__(self, raw_batch: Sequence[Tuple[str, str]]):
+        # RoBERTa uses an eos token, while ESM-1 does not.
+        batch_size = len(raw_batch)
+        batch_labels, seq_str_list, attention_masks, token_type_ids = zip(*raw_batch)
+        seq_encoded_list = [self.alphabet.encode(seq_str) for seq_str in seq_str_list]
+        if self.truncation_seq_length:
+            seq_encoded_list = [seq_str[:self.truncation_seq_length] for seq_str in seq_encoded_list]
+        max_len = max(len(seq_encoded) for seq_encoded in seq_encoded_list)
+        tokens = torch.empty(
+            (
+                batch_size,
+                max_len + int(self.alphabet.prepend_bos) + int(self.alphabet.append_eos),
+            ),
+            dtype=torch.int64,
+        )
+        tokens.fill_(self.alphabet.padding_idx)
+        labels = []
+        strs = []
+        masks = []
+        type_ids = []
+        for i, (label, seq_str, seq_encoded, mask, type_id) in enumerate(
+            zip(batch_labels, seq_str_list, seq_encoded_list, attention_masks, token_type_ids)
+        ):
+            labels.append(label)
+            strs.append(seq_str)
+            masks.append(mask)
+            type_ids.append(type_id)
+            if self.alphabet.prepend_bos:
+                tokens[i, 0] = self.alphabet.cls_idx
+            seq = torch.tensor(seq_encoded, dtype=torch.int64)
+            tokens[
+                i,
+                int(self.alphabet.prepend_bos) : len(seq_encoded)
+                + int(self.alphabet.prepend_bos),
+            ] = seq
+            if self.alphabet.append_eos:
+                tokens[i, len(seq_encoded) + int(self.alphabet.prepend_bos)] = self.alphabet.eos_idx
+        labels = torch.stack(labels)
+        masks = torch.stack(masks)
+        type_ids = torch.stack(type_ids)
+        return labels, strs, tokens, masks, type_ids
+    
 class BatchConverter(object):
     """Callable to convert an unprocessed (labels + strings) batch to a
     processed (labels + tensor) batch.
@@ -293,7 +429,7 @@ class BatchConverter(object):
             ] = seq
             if self.alphabet.append_eos:
                 tokens[i, len(seq_encoded) + int(self.alphabet.prepend_bos)] = self.alphabet.eos_idx
-
+        labels = torch.stack(labels)
         return labels, strs, tokens
 
 

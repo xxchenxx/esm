@@ -1,0 +1,3 @@
+[submodule "DNABERT"]
+	path = DNABERT
+	url = git@github.com:xxchenxx/DNABERT.git
